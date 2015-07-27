@@ -109,7 +109,8 @@ module.exports = function (grunt) {
         dest: 'site',
         styles: [ 'ngdoc_assets/angularM-docs.css' ],
         html5Mode: false,
-        title: 'Angular-m'
+        title: 'Angular-m',
+        startPage: '/api/angular.m'
       },
       api: {
         src: ['src/**/*.js'],
