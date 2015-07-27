@@ -107,11 +107,9 @@ module.exports = function (grunt) {
     ngdocs: {
       options: {
         dest: 'site',
-        styles: [ 'ngdoc_assets/uirouter-docs.css' ],
+        styles: [ 'ngdoc_assets/angularM-docs.css' ],
         html5Mode: false,
-        title: 'UI Router',
-        startPage: '/api/ui.router',
-        navTemplate: 'ngdoc_assets/docnav.html'
+        title: 'Angular-m'
       },
       api: {
         src: ['src/**/*.js'],
