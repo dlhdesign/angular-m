@@ -1,0 +1,23 @@
+{
+	"name": "angular-m",
+	"version": "1.0.0",
+	"main": "./release/angular-m.js",
+	"dependencies": {
+		"angular": ">= 1.0.8"
+	},
+	"ignore": [
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"component.json",
+		"package.json",
+		"lib",
+		"config",
+		"sample",
+		"test",
+		"tests",
+		"ngdoc_assets",
+		"Gruntfile.js",
+		"files.js"
+	]
+}
