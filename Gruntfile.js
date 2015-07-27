@@ -172,10 +172,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('prepare-release', function () {
     var bower = grunt.file.readJSON('bower.json'),
-        component = grunt.file.readJSON('component.json'),
         version = bower.version;
     if (version != grunt.config('pkg.version')) throw 'Version mismatch in bower.json';
-    if (version != component.version) throw 'Version mismatch in component.json';
 
     promising(this,
       ensureCleanMaster().then(function () {
