@@ -13,3 +13,12 @@ describe('_-like filter', function() {
     expect(filtered).toEqual({ baz: 3, qux: 4 });
   });
 });
+
+describe('_-like pick', function() {
+  it("should pick from objects", function() {
+    var input = { foo: 1, bar: 2, baz: 3, qux: 4 };
+    var picked = pick(input, 'foo', 'bar');
+    expect(Object.keys(picked).length).toBe(2);
+    expect(picked).toEqual({ foo: 1, bar: 2 });
+  });
+});
