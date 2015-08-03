@@ -1,5 +1,4 @@
-$RegExConstant.$inject = [];
-function $RegExConstant() {
+function RegExConstant() {
   return {
     email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,
     latLong:    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
@@ -13,4 +12,4 @@ function $RegExConstant() {
   };
 }
 
-angular.module( 'angular-m' ).constant( 'REGEX', $RegExConstant );
+angular.module( 'angular-m' ).constant( 'REGEX', RegExConstant );

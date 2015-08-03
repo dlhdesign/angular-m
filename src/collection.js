@@ -1,5 +1,4 @@
-$CollectionFactory.$inject = ['Base', 'Singleton'];
-function $CollectionFactory(Base, Singleton) {
+function CollectionFactory(Base, Singleton) {
   /**
   Base model that represents multiple objects.
   @class Collection
@@ -513,4 +512,4 @@ function $CollectionFactory(Base, Singleton) {
    */
   return Collection;
 }
-angular.module( 'angular-m' ).factory( 'Collection', $CollectionFactory );
+angular.module( 'angular-m' ).factory( 'Collection', [ 'Base', 'Singleton', CollectionFactory ] );

@@ -1,5 +1,4 @@
-$BaseFactory.$inject = [];
-function $BaseFactory() {
+function BaseFactory() {
   /*jshint strict:false */
   var initializing = false,
       // Need to check which version of function.toString we have
@@ -348,4 +347,4 @@ function $BaseFactory() {
    */
   return Base;
 }
-angular.module( 'angular-m' ).factory( 'Base', $BaseFactory );
+angular.module( 'angular-m' ).factory( 'Base', BaseFactory );

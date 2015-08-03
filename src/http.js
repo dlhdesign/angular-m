@@ -1,5 +1,4 @@
-$HTTPService.$inject = ['$rootScope', '$http'];
-function $HTTPService($rootScope, $http) {
+function HTTPService($rootScope, $http) {
 
   var METHODS = {
     read: 'GET',
@@ -64,4 +63,4 @@ function $HTTPService($rootScope, $http) {
     deleteList: callDelete
   };
 }
-angular.module( 'angular-m' ).service( 'm-http', $HTTPService );
+angular.module( 'angular-m' ).service( 'm-http', [ '$rootScope', '$http', HTTPService ] );

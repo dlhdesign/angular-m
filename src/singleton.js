@@ -1,5 +1,4 @@
-$SingletonFactory.$inject = ['Base', 'REGEX'];
-function $SingletonFactory(Base, REGEX) {
+function SingletonFactory(Base, REGEX) {
   /**
   Base model that represents a single object.
   @class Singleton
@@ -632,4 +631,4 @@ function $SingletonFactory(Base, REGEX) {
    */
   return Singleton;
 }
-angular.module( 'angular-m' ).factory( 'Singleton', $SingletonFactory );
+angular.module( 'angular-m' ).factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );
