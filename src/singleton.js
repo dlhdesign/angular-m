@@ -1,4 +1,4 @@
-$SingletonFactory.$inject = ['$BaseFactory', '$RegExConstant'];
+$SingletonFactory.$inject = ['Base', 'REGEX'];
 function $SingletonFactory(Base, REGEX) {
   /**
   Base model that represents a single object.

@@ -64,5 +64,4 @@ function $HTTPService($rootScope, $http) {
     deleteList: callDelete
   };
 }
-angular.module('angular-m.service.http', ['angular-m'])
-  .service('m-http', $HTTPService);
+angular.module( 'angular-m' ).service( 'm-http', $HTTPService );

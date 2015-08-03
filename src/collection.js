@@ -1,4 +1,4 @@
-$CollectionFactory.$inject = ['$BaseFactory'];
+$CollectionFactory.$inject = ['Base', 'Singleton'];
 function $CollectionFactory(Base, Singleton) {
   /**
   Base model that represents multiple objects.
