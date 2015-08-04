@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.0.4
+ * @version v0.0.5
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -209,7 +209,7 @@ function HTTPService($rootScope, $http) {
     deleteList: callDelete
   };
 }
-angular.module( 'angular-m' ).service( 'm-http', [ '$rootScope', '$http', HTTPService ] );
+angular.module( 'angular-m.http' ).service( '$mhttp', [ '$rootScope', '$http', HTTPService ] );
 function RegExConstant() {
   return {
     email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,
