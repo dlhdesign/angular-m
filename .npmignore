@@ -2,11 +2,12 @@
 **/.*
 
 # Build related stuff
+/build
 /config
 /lib
 /ngdoc_assets
-/sample
-/test
+/spec
+/src
 Gruntfile.js
 files.js
 
