@@ -1,23 +1,24 @@
 {
-	"name": "angular-m",
-	"version": "0.0.6",
-	"main": "./release/angular-m.js",
-	"dependencies": {
-		"angular": ">= 1.0.8"
-	},
-	"ignore": [
-		"**/.*",
-		"node_modules",
-		"bower_components",
-		"component.json",
-		"package.json",
-		"lib",
-		"config",
-		"sample",
-		"test",
-		"tests",
-		"ngdoc_assets",
-		"Gruntfile.js",
-		"files.js"
-	]
+  "name": "angular-m",
+  "version": "0.1.0",
+  "main": "./release/angular-m.js",
+  "dependencies": {
+    "angular": ">= 1.0.8"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "component.json",
+    "package.json",
+    "build",
+    "config",
+    "lib",
+    "ngdoc_assets",
+    "spec",
+    "src",
+    "Gruntfile.js",
+    "files.js",
+    "bower.json"
+  ]
 }
