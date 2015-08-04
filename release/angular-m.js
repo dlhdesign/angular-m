@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.0.0
+ * @version v0.0.4
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -144,8 +144,7 @@ function map(collection, callback) {
  */
 angular.module('angular-m', []);
 
-$HTTPService.$inject = ['$rootScope', '$http'];
-function $HTTPService($rootScope, $http) {
+function HTTPService($rootScope, $http) {
 
   var METHODS = {
     read: 'GET',
@@ -210,10 +209,8 @@ function $HTTPService($rootScope, $http) {
     deleteList: callDelete
   };
 }
-angular.module('angular-m.service.http', ['angular-m'])
-  .service('m-http', $HTTPService);
-$RegExConstant.$inject = [];
-function $RegExConstant() {
+angular.module( 'angular-m' ).service( 'm-http', [ '$rootScope', '$http', HTTPService ] );
+function RegExConstant() {
   return {
     email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,
     latLong:    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
@@ -227,9 +224,8 @@ function $RegExConstant() {
   };
 }
 
-angular.module( 'angular-m' ).constant( 'REGEX', $RegExConstant );
-$BaseFactory.$inject = [];
-function $BaseFactory() {
+angular.module( 'angular-m' ).constant( 'REGEX', RegExConstant );
+function BaseFactory() {
   /*jshint strict:false */
   var initializing = false,
       // Need to check which version of function.toString we have
@@ -578,9 +574,8 @@ function $BaseFactory() {
    */
   return Base;
 }
-angular.module( 'angular-m' ).factory( 'Base', $BaseFactory );
-$SingletonFactory.$inject = ['$BaseFactory', '$RegExConstant'];
-function $SingletonFactory(Base, REGEX) {
+angular.module( 'angular-m' ).factory( 'Base', BaseFactory );
+function SingletonFactory(Base, REGEX) {
   /**
   Base model that represents a single object.
   @class Singleton
@@ -1213,9 +1208,8 @@ function $SingletonFactory(Base, REGEX) {
    */
   return Singleton;
 }
-angular.module( 'angular-m' ).factory( 'Singleton', $SingletonFactory );
-$CollectionFactory.$inject = ['$BaseFactory'];
-function $CollectionFactory(Base, Singleton) {
+angular.module( 'angular-m' ).factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );
+function CollectionFactory(Base, Singleton) {
   /**
   Base model that represents multiple objects.
   @class Collection
@@ -1729,4 +1723,4 @@ function $CollectionFactory(Base, Singleton) {
    */
   return Collection;
 }
-angular.module( 'angular-m' ).factory( 'Collection', $CollectionFactory );})(window, window.angular);
+angular.module( 'angular-m' ).factory( 'Collection', [ 'Base', 'Singleton', CollectionFactory ] );})(window, window.angular);
