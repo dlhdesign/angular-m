@@ -1,6 +1,6 @@
 {
 	"name": "angular-m",
-	"version": "0.0.1",
+	"version": "0.0.4",
 	"main": "./release/angular-m.js",
 	"dependencies": {
 		"angular": ">= 1.0.8"
