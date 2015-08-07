@@ -192,7 +192,11 @@ module.exports = function (grunt) {
     promising(this,
       system('git add \'' + releasedir + '\'').then(function () {
         return system('git commit -m \'release ' + version + '\'');
-      }).then(function () {
+      })
+      .then(function () {
+        return system('git push origin master');
+      })
+      .then(function () {
         return system('curl --data \'{"tag_name": "' + version + '","target_commitish": "master","name": "' + version + '","body": "' + version + '","draft": false,"prerelease": true}\' https://api.github.com/repos/dlhdesign/angular-m/releases?access_token=5eb55319cbb82f51119c077b338bba63bfb9cbc0');
       })
     );

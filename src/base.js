@@ -349,7 +349,7 @@ function BaseFactory() {
   @return {Function} New constructor
   */
   Base.extend = function extend(properties) {
-    var _super = scope.prototype,
+    var _super = this.prototype,
         proto, key;
 
     function construct(constructor, args) {
@@ -386,7 +386,7 @@ function BaseFactory() {
     }
 
     initializing = true;
-    proto = new scope();
+    proto = new this();
     initializing = false;
     if (!properties.$type) {
       properties.$type = 'Class';
