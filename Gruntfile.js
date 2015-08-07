@@ -18,9 +18,13 @@ module.exports = function (grunt) {
         ' */'
     },
     clean: {
-      build: '<%= builddir %>',
-      dist: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js']
-    }
+      build: {
+        src: '<%= builddir %>'
+      },
+      dist: {
+        src: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js']
+      }
+    },
     concat: {
       options: {
         banner: '<%= meta.banner %>\n\n'+
