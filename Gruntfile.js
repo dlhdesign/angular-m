@@ -8,11 +8,10 @@ module.exports = function (grunt) {
   grunt.initConfig({
     builddir: 'build',
     pkg: grunt.file.readJSON('package.json'),
-    buildtag: '-dev-' + grunt.template.today('yyyy-mm-dd'),
     meta: {
       banner: '/**\n' +
         ' * <%= pkg.description %>\n' +
-        ' * @version v<%= pkg.version %><%= buildtag %>\n' +
+        ' * @version v<%= pkg.version %>\n' +
         ' * @link <%= pkg.homepage %>\n' +
         ' * @license MIT License, http://www.opensource.org/licenses/MIT\n' +
         ' */'
@@ -43,17 +42,11 @@ module.exports = function (grunt) {
         }
       }
     },
-    env: {
-      options : {
-        ANGULARMGITAUTH: '5eb55319cbb82f51119c077b338bba63bfb9cbc0'
-      }
-    },
     release: {
       options: {
         npm: false,
         tag: false,
         pushTags: false,
-        tagMessage: '<%=version%>',
         additionalFiles: ['bower.json'],
         beforeRelease: ['build'],
         github: {
