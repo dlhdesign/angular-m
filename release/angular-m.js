@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.0
+ * @version v0.1.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -70,13 +70,17 @@ function objectKeys(object) {
  * @return {Number} Returns the array index value of `value`, or `-1` if not present.
  */
 function indexOf(array, value) {
+  var len = array.length >>> 0,
+      from = Number(arguments[2]) || 0;
+
   if (Array.prototype.indexOf) {
     return array.indexOf(value, Number(arguments[2]) || 0);
   }
-  var len = array.length >>> 0, from = Number(arguments[2]) || 0;
   from = (from < 0) ? Math.ceil(from) : Math.floor(from);
 
-  if (from < 0) from += len;
+  if (from < 0) {
+    from += len;
+  }
 
   for (; from < len; from++) {
     if (from in array && array[from] === value) return from;
@@ -87,17 +91,17 @@ function indexOf(array, value) {
 // extracted from underscore.js
 // Return a copy of the object only containing the whitelisted properties.
 function pick(obj) {
-  var copy = {};
-  var keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
+  var c = {},
+      keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
   m_forEach(keys, function(key) {
-    if (key in obj) copy[key] = obj[key];
+    if (key in obj) c[key] = obj[key];
   });
-  return copy;
+  return c;
 }
 
 function filter(collection, callback) {
-  var array = m_isArray(collection);
-  var result = array ? [] : {};
+  var array = m_isArray(collection).
+      result = array ? [] : {};
   m_forEach(collection, function(val, i) {
     if (callback(val, i)) {
       result[array ? result.length : i] = val;
@@ -143,7 +147,7 @@ function map(collection, callback) {
  */
 angular.module('angular-m', []);
 
-function HTTPService($rootScope, $http) {
+function HTTPService($rootScope, $http, $q) {
 
   var METHODS = {
     read: 'GET',
@@ -152,20 +156,34 @@ function HTTPService($rootScope, $http) {
     delete: 'DELETE'
   };
 
+  var offlineError = {online: false};
+
   function callHTTP(config, success, fail) {
+    var deferred = $q.defer(),
+        isOnline = m_isBoolean(navigator.onLine) ? navigator.onLine : true;
+
     config = config || {};
     config.method = config.method || METHODS.read;
-    return $http(config)
-      .success(function (data) {
-        if (m_isFunction(success)) {
-          success(data);
-        }
-      })
-      .error(function (data) {
-        if (m_isFunction(fail)) {
-          fail(data);
-        }
-      });
+
+    if (isOnline === false) {
+      fail(offlineError);
+      deferred.reject(offlineError);
+    } else {    
+      $http(config)
+        .success(function (data) {
+          if (m_isFunction(success)) {
+            success(data);
+          }
+          deferred.resolve(data);
+        })
+        .error(function (data) {
+          if (m_isFunction(fail)) {
+            fail(data);
+          }
+          deferred.reject(data);
+        });
+    }
+    return deferred;
   }
 
   function callRead(config, success, fail) {
@@ -208,7 +226,10 @@ function HTTPService($rootScope, $http) {
     deleteList: callDelete
   };
 }
-angular.module( 'angular-m.http', [] ).service( '$mhttp', [ '$rootScope', '$http', HTTPService ] );
+
+angular.module( 'angular-m.http', [] )
+  .service( '$mhttp', [ '$rootScope', '$http', '$q', HTTPService ] );
+
 function RegExConstant() {
   return {
     email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,
@@ -223,25 +244,31 @@ function RegExConstant() {
   };
 }
 
-angular.module( 'angular-m' ).constant( 'REGEX', RegExConstant );
+angular.module( 'angular-m' )
+  .constant( 'REGEX', RegExConstant );
+
 function BaseFactory() {
   /*jshint strict:false */
   var initializing = false,
       // Need to check which version of function.toString we have
-      superPattern = /xyz/.test(function () { /*jshint unused:false */ var xyz; }) ? /\b_super\b/ : /.*/;
+      superPattern = /xy/.test(function () {return 'xy';}) ? /\b_super\b/ : /.*/;
 
-  function executeQueue() {
-    /*jshint -W040 */
+  function executeQueue(idx, data) {
     var self = this,
-        queue, cb;
-    if (self.isFinal()) {
-      queue = m_m_copy(self.__cbQueue);
-      self.__cbQueue = [];
-      /*jshint -W084 */
-      while(cb = queue.shift()) {
-        if ((cb.type < 3 && self.__resolved === true) ||
-            (cb.type > 1 && self.__rejected === true)) {
-          cb.cb.call(self);
+        i = 0;
+    for(; i < self.__cbQueue.length; i++) {
+      if (self.__cbQueue[i].idx <= idx) {
+        if (
+          (self.__cbQueue[i].type < 3 && self.__finals[idx] && self.__finals[idx].resolved === true) || // Success (type=1) & Always (type=2)
+          (self.__cbQueue[i].type > 1 && self.__cbQueue[i].type < 4 && self.__finals[idx] && self.__finals[idx].rejected === true) || // Fail (type=3) & Always (type=2)
+          (self.__cbQueue[i].type === 4 && (!self.__finals[idx] || (!self.__finals[idx].resolved && !self.__finals[idx].rejected))) // Progress (type=4)
+        ) {
+          self.__cbQueue[i].cb.call(self, data);
+        }
+        // If this thread is resolved or rejected, then remove the cb from the queue to keep executions faster
+        if (self.__finals[idx].resolved || self.__finals[idx].rejected) {
+          self.__cbQueue.splice(i, 1);
+          i--;
         }
       }
     }
@@ -259,6 +286,10 @@ function BaseFactory() {
   /**
   Event that triggers when the model is rejected (generally when a data load fails)
   @event Base#rejected
+  */
+  /**
+  Event that triggers when the model is notified (progress is recorded)
+  @event Base#notified
   */
   /**
   Event that triggers when the model is finalized (resolved or rejected)
@@ -295,6 +326,8 @@ function BaseFactory() {
       var self = this;
       self.__arguments = m_copy(arguments);
       self.__cbQueue = [];
+      self.__cbQueueIdx = 1;
+      self.__finals = [];
       self.__listeners = {};
       self.$errors = {};
       self.$valid = true;
@@ -308,104 +341,146 @@ function BaseFactory() {
     clone: function () {
       var self = this,
           ret = new self.constructor(null, true);
-      ret.__arguments = copy(self.__arguments);
-      ret.__resolved = self.__resolved;
-      ret.__rejected = self.__rejected;
+      ret.__arguments = m_copy(self.__arguments);
       self.trigger('cloned', ret);
       return ret;
     },
     /**
     Indicates whether the instance has been finalized (resolved or rejected)
+    @arg {number} [idx=this.__cbQueueIdx] Thread index to check
     @return {Boolean}
     */
-    isFinal: function () {
+    isFinal: function (idx) {
       var self = this;
-      return !!(self.__resolved || self.__rejected);
+      idx = idx || self.__cbQueueIdx;
+      if (self.__finals[idx]) {
+        return !!(self.__finals[idx].resolved || self.__finals[idx].rejected);
+      }
+      return false;
     },
     /**
-    Marks the instance as "resolved" (successfully complete).
+    Marks the promie thread as "resolved" (successfully complete).
+    @arg [idx=this.__cbQueueIdx] - Promise thread to resolve
+    @arg [data] - Data related to the resolution
     @fires Base#resolved
     @fires Base#finalized
     @return {Base} `this`
     */
-    resolve: function () {
+    resolve: function (idx, data) {
       var self = this;
-      if (!self.isFinal()) {
-        self.__resolved = true;
-        executeQueue.call(self);
-        self.trigger('resolved');
-        self.trigger('finalized');
+      idx = idx || self.__cbQueueIdx;
+      if (!self.isFinal(idx)) {
+        self.__finals[idx] = {
+          resolved: true,
+          data: data
+        };
+        executeQueue.call(self, idx, data);
+        self.trigger('resolved', data);
+        self.trigger('finalized', data);
       }
       return self;
     },
     /**
-    Marks the instance as "rejected" (unsuccessfully complete).
+    Marks the promise thread as "rejected" (unsuccessfully complete).
+    @arg [idx=this.__cbQueueIdx] - Promise thread to reject
+    @arg [data] - Data related to the rejection
     @fires Base#rejected
     @fires Base#finalized
-    @return {Base} `this`
+    @returns {Base} `this`
     */
-    reject: function () {
+    reject: function (idx, data) {
       var self = this;
-      if (!self.isFinal()) {
-        self.__rejected = true;
-        executeQueue.call(self);
-        self.trigger('rejected');
-        self.trigger('finalized');
+      idx = idx || self.__cbQueueIdx;
+      if (!self.isFinal(idx)) {
+        self.__finals[idx] = {
+          rejected: true,
+          data: data
+        };
+        executeQueue.call(self, idx, data);
+        self.trigger('rejected', data);
+        self.trigger('finalized', data);
       }
       return self;
     },
     /**
-    Removes the resolved/rejected state on the instance.
-    @fires Base#unfinalized
-    @return {Base} `this`
+    Triggers a progress step for the provided promise thread.
+    @arg [idx=this.__cbQueueIdx] - Promise thread to notify of progress
+    @arg [data] - Data related to the progress step
+    @fires Base#notified
+    @returns {Base} `this`
     */
-    unfinalize: function () {
+    notify: function (idx, data) {
       var self = this;
-      delete self.__resolved;
-      delete self.__rejected;
-      self.trigger('unfinalized');
+      idx = idx || self.__cbQueueIdx;
+      if (!self.isFinal(idx)) {
+        executeQueue.call(self, idx, data);
+        self.trigger('notified', data);
+      }
       return self;
     },
     /**
-    Attaches success/fail callbacks to the instance, which will trigger upon the next resolve/reject call respectively or, if the instance is already final, immediately.
-    @param {Base~successCallback} [success]
-    @param {Base~failCallback}    [fail]
-    @return {Base} `this`
+    "Resets" the Promise state on the instance by incrementing the current promise thread index.
+    @fires Base#unfinalized
+    @returns {number} `idx` New promise thread index
+    */
+    unfinalize: function () {
+      this.trigger('unfinalized');
+      return ++this.__cbQueueIdx;
+    },
+    /**
+    Attaches success/fail/progress callbacks to the current promise thread, which will trigger upon the next resolve/reject call respectively or, if the current promise thread is already final, immediately.
+    @arg {Base~successCallback}   [success]
+    @arg {Base~failCallback}      [fail]
+    @arg {Base~progressCallback}  [progress]
+    @returns {Base} `this`
     */
     /**
-    Success callback will be triggered when/if the instance is resolved.
+    Success callback will be triggered when/if the current promise thread is resolved.
     @callback Base~successCallback
     */
     /**
-    Fail callback will be triggered when/if the instance is rejected.
+    Fail callback will be triggered when/if the current promise thread is rejected.
     @callback Base~failCallback
     */
-    then: function(success, fail) {
+    /**
+    Progress callback will be triggered as the current promise thread passes through various states of progress.
+    @callback Base~progressCallback
+    */
+    then: function(success, fail, progress) {
       var self = this;
       if (m_isFunction(success)) {
         self.__cbQueue.push({
           type: 1,
-          cb: success
+          cb: success,
+          idx: self.__cbQueueIdx
         });
       }
       if (m_isFunction(fail)) {
         self.__cbQueue.push({
           type: 3,
-          cb: fail
+          cb: fail,
+          idx: self.__cbQueueIdx
         });
       }
-      if (self.isFinal()) {
-        executeQueue.call(self);
+      if (m_isFunction(progress)) {
+        self.__cbQueue.push({
+          type: 4,
+          cb: progress,
+          idx: self.__cbQueueIdx
+        });
+      }
+      if (self.__finals[self.__cbQueueIdx]) {
+        executeQueue.call(self, self.__cbQueueIdx, self.__finals[self.__cbQueueIdx].data);
       }
       return self;
     },
     /**
-    Attaches a callback to the instance which will trigger upon the next finalization or, if the instance is already final, immediately.
-    @param {Base~alwaysCallback} [always]
-    @return {Base} `this`
+    Attaches a callback to the current promise thread which will trigger upon the next finalization or, if the current promise thread is already final, immediately.
+    @arg {Base~alwaysCallback} [always]
+    @returns {Base} `this`
     */
     /**
-    Always callback will be triggered when/if the instance is finalized (either resolved OR rejected).
+    Always callback will be triggered when/if the current promise thread is finalized (either resolved OR rejected).
     @callback Base~alwaysCallback
     */
     always: function (always) {
@@ -413,16 +488,17 @@ function BaseFactory() {
       if (m_isFunction(always)) {
         self.__cbQueue.push({
           type: 2,
-          cb: always
+          cb: always,
+          idx: self.__cbQueueIdx
         });
       }
-      if (self.isFinal()) {
-        executeQueue.call(self);
+      if (self.__finals[self.__cbQueueIdx]) {
+        executeQueue.call(self, self.__cbQueueIdx, self.__finals[self.__cbQueueIdx].data);
       }
       return self;
     },
     /**
-    Attaches success callback to the instance.
+    Attaches success callback to the current promise thread.
     @param {Base~successCallback} [success]
     @return {Base} `this`
     */
@@ -430,12 +506,20 @@ function BaseFactory() {
       return this.then(cb);
     },
     /**
-    Attaches fail callback to the instance.
+    Attaches fail callback to the current promise thread.
     @param {Base~failCallback} [fail]
     @return {Base} `this`
     */
     fail: function (cb) {
       return this.then(null, cb);
+    },
+    /**
+    Attaches a progress callback to the current promise thread.
+    @param {Base~progressCallback} [progress]
+    @return {Base} `this`
+    */
+    progress: function (cb) {
+      return this.then(null, null, cb);
     },
     /**
     Attaches a listener to an event type.
@@ -514,51 +598,62 @@ function BaseFactory() {
   @return {Function} New constructor
   */
   Base.extend = function extend(properties) {
-    /*jshint strict:false */
-    /*jshint loopfunc:true */
-    /*jshint noarg:false */
-    var _super = this.prototype,
+    var _super = scope.prototype,
         proto, key;
 
-    initializing = true;
-    proto = new this();
-    initializing = false;
-    
-    for ( key in properties ) {
-      if ( properties.hasOwnProperty( key ) ) {
-        if ( m_isFunction( properties[ key ] ) && m_isFunction( _super[ key ] ) && superPattern.test( properties[ key ] ) ) {
-          proto[ key ] = (function( key, fn ) {
-            return function() {
-              var tmp = this._super,
-                  ret;
+    function construct(constructor, args) {
+      function Class() {
+        return constructor.apply(this, args);
+      }
+      Class.prototype = constructor.prototype;
+      return new Class();
+    }
 
-              this._super = _super[ key ];
-              ret = fn.apply( this, arguments );
-              if ( m_isFunction( tmp ) ) {
-                this._super = tmp;
-              } else {
-                delete this._super;
-              }
-              return ret;
-            };
-          })( key, properties[ key ] );
+    function createFnProp (key, fn, super2) {
+      return function() {
+        var tmp = this._super,
+            ret;
+
+        this._super = super2[ key ];
+        ret = fn.apply(this, arguments);
+        if (m_isFunction(tmp)) {
+          this._super = tmp;
+        } else {
+          delete this._super;
+        }
+        return ret;
+      };
+    }
+    
+    function Class() {
+      if (this.constructor !== Class) {
+        return construct(Class, arguments);
+      }
+      if (!initializing && m_isFunction(this.init)) {
+        return this.init.apply(this, arguments);
+      }
+    }
+
+    initializing = true;
+    proto = new scope();
+    initializing = false;
+    if (!properties.$type) {
+      properties.$type = 'Class';
+    }
+
+    for (key in properties) {
+      if (properties.hasOwnProperty(key)) {
+        if (m_isFunction(properties[ key ]) && m_isFunction(_super[ key ]) && superPattern.test(properties[ key ])) {
+          proto[ key ] = createFnProp(key, properties[ key ], _super);
         } else {
           proto[ key ] = properties[ key ];
         }
       }
     }
-    if (!properties.type) {
-      properties.type = 'Object';
-    }
-    function Class() {
-      if ( !initializing && m_isFunction( this.init ) ) {
-        return this.init.apply(this, arguments);
-      }
-    }
     Class.prototype = proto;
-    if ( Object.defineProperty ) {
-      Object.defineProperty( Class.prototype, 'constructor', { 
-        enumerable: false, 
+    if (Object.defineProperty) {
+      Object.defineProperty( Class.prototype, 'constructor', {
+        enumerable: false,
         value: Class
       });
     } else {
@@ -573,7 +668,10 @@ function BaseFactory() {
    */
   return Base;
 }
-angular.module( 'angular-m' ).factory( 'Base', BaseFactory );
+
+angular.module( 'angular-m' )
+  .factory( 'Base', BaseFactory );
+
 function SingletonFactory(Base, REGEX) {
   /**
   Base model that represents a single object.
@@ -844,7 +942,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         self.__merged = false;
         self.$dirty = true;
-        self.__setData = copy(val);
+        self.__setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
         self.clearCache();
         return self;
@@ -880,7 +978,7 @@ function SingletonFactory(Base, REGEX) {
         if ( m_isObject(self.fields) && self.__fieldConfig === false ) {
           self.__fieldConfig = [];
           m_forEach(self.fields,function (field, key) {
-            var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? copy(field) : {};
+            var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? m_copy(field) : {};
             fieldConfig.key = fieldConfig.key || key;
             fieldConfig.methodName = fieldConfig.methodName || cap(key);
             self.__fieldConfig.push(fieldConfig);
@@ -939,7 +1037,7 @@ function SingletonFactory(Base, REGEX) {
       clone: function() {
         var self = this,
             ret = self._super.apply(self, arguments);
-        ret.__data = copy(self.__data);
+        ret.__data = m_copy(self.__data);
         ret.set(self.__setData);
         ret.$loaded = self.$loaded;
         ret.$parent = self.$parent;
@@ -1004,29 +1102,42 @@ function SingletonFactory(Base, REGEX) {
       @arg [data] - Data to be provided to the readService
       @returns {Singleton} `this`
       */
-      read: function (data) {
+      read: function (data, idx) {
         var self = this,
-            ret;
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.read(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
         if (m_isFunction(self.readService)) {
           self.$busy = true;
-          self.unfinalize();
           self.__lastReadData = data || {};
           ret = self.readService(
             data,
             function (data) {
-              self.__data = data;
-              self.resolve();
+              delete self.$errors.read;
+              self.finalize(data);
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.read = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.read = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.read = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -1044,35 +1155,49 @@ function SingletonFactory(Base, REGEX) {
       @arg [data=this.__setData] - Data to be provided to the updateService
       @returns {Singleton} `this`
       */
-      update: function (data) {
+      update: function (data, idx) {
         var self = this,
-            ret;
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.update(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
         if (m_isFunction(self.updateService)) {
           self.$busy = true;
-          self.unfinalize();
           if (arguments.length === 0) {
             if (self.$dirty === true) {
               data = self.__setData;
             } else {
-              return self.resolve();
+              delete self.$errors.update;
+              return self.resolve(idx);
             }
           }
           ret = self.updateService(
             data,
             function (data) {
+              delete self.$errors.update;
               self.finalize(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.update = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.update = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.update = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -1090,28 +1215,41 @@ function SingletonFactory(Base, REGEX) {
       @arg [data] - Data to be provided to the uploadService
       @returns {Singleton} `this`
       */
-      upload: function (data) {
+      upload: function (data, idx) {
         var self = this,
-            ret;
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.upload(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
         if (m_isFunction(self.uploadService)) {
           self.$busy = true;
-          self.unfinalize();
           ret = self.uploadService(
             data,
             function (data) {
+              delete self.$errors.upload;
               self.finalize(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.upload = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.upload = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.upload = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -1129,35 +1267,49 @@ function SingletonFactory(Base, REGEX) {
       @arg [data=this.get()] - Data to be provided to the createService
       @returns {Singleton} `this`
       */
-      create: function (data) {
+      create: function (data, idx) {
         var self = this,
-            ret;
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.create(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
         if (m_isFunction(self.createService)) {
           self.$busy = true;
-          self.unfinalize();
           if (arguments.length === 0) {
             if (self.$dirty === true) {
               data = self.get();
             } else {
-              return self.resolve();
+              delete self.$errors.create;
+              return self.resolve(idx);
             }
           }
           ret = self.createService(
             data,
             function (data) {
+              delete self.$errors.create;
               self.finalize(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.create = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.create = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.create = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -1175,28 +1327,41 @@ function SingletonFactory(Base, REGEX) {
       @arg [data] - Data to be provided to the deleteService
       @returns {Singleton} `this`
       */
-      delete: function (data) {
+      delete: function (data, idx) {
         var self = this,
-            ret;
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.delete(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
         if (m_isFunction(self.deleteService)) {
           self.$busy = true;
-          self.unfinalize();
           ret = self.deleteService(
             data,
             function (data) {
+              delete self.$errors.delete;
               self.finalize(data || {});
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.delete = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.delete = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.delete = true;
+          self.reject(idx);
         }
         return self;
       }
@@ -1207,7 +1372,9 @@ function SingletonFactory(Base, REGEX) {
    */
   return Singleton;
 }
-angular.module( 'angular-m' ).factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );
+angular.module( 'angular-m' )
+  .factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );
+
 function CollectionFactory(Base, Singleton) {
   /**
   Base model that represents multiple objects.
@@ -1431,25 +1598,25 @@ function CollectionFactory(Base, Singleton) {
           if (m_isFunction(_filter) === true) {
             self.__filter = _filter;
             self.select(false);
-            self.__origData = self.__origData || copy(self.__data);
+            self.__origData = self.__origData || m_copy(self.__data);
             self.__data = filter(self.get(), _filter);
             self.length = self.__data.length;
             self.__modeled = null;
           } else if (m_isObject(_filter) === true) {
             if (keys(_filter).length > 0) {
-              self.__filter = filter;
+              self.__filter = _filter;
               self.select(false);
-              self.__origData = self.__origData || copy(self.__data);
+              self.__origData = self.__origData || m_copy(self.__data);
               filter(self.get(), function (val) {
                 var ret = true;
-                pick(filter, function (v, k) {
+                pick(_filter, function (v, k) {
                   var value;
                   if (m_isFunction(val[k]) === true) {
                     value = val[k]();
                   } else {
                     value = val[k];
                   }
-                  ret = ret && _.isEqual(value, v);
+                  ret = ret && value === v;
                   if (ret === false) {
                     return ret;
                   }
@@ -1515,10 +1682,10 @@ function CollectionFactory(Base, Singleton) {
           }
           if (m_isFunction(sort) === true) {
             self.__sort = sort;
-            self.__origData = self.__origData || copy(self.__data);
+            self.__origData = self.__origData || m_copy(self.__data);
             self.__modeled = self.get().sort(sort);
           } else if (m_isArray(sort) === true && sort.length > 0) {
-            self.__origData = self.__origData || copy(self.__data);
+            self.__origData = self.__origData || m_copy(self.__data);
             len = sort.reverse().length;
             while (len--) {
               sort[len] = sort[len].exec(reSortExpression);
@@ -1546,7 +1713,7 @@ function CollectionFactory(Base, Singleton) {
         var self = this;
         if (self.__origData !== null) {
           self.select(false);
-          self.__data = copy(self.__origData);
+          self.__data = m_copy(self.__origData);
           self.__addData = [];
           self.__modeled = null;
           self.length = self.__data.length;
@@ -1611,9 +1778,9 @@ function CollectionFactory(Base, Singleton) {
       clone: function () {
         var self = this,
             ret = self._super.apply(self, arguments);
-        ret.__data = copy(self.__data);
-        ret.__addData = copy(self.__addData);
-        ret.__origData = copy(self.__origData);
+        ret.__data = m_copy(self.__data);
+        ret.__addData = m_copy(self.__addData);
+        ret.__origData = m_copy(self.__origData);
         ret.length = self.length;
         ret.$loaded = ret.$loaded;
         ret.$selected = self.$selected;
@@ -1647,27 +1814,62 @@ function CollectionFactory(Base, Singleton) {
         return self.read();
       },
 
+      /**
+      Success callback passed into a service.
+      @arg data - The data resulting from a sucessful service call
+      @callback Collection~successCallback
+      */
+      /**
+      Fail callback passed into a service.
+      @arg data - The data resulting from an erroring service call
+      @callback Collection~failCallback
+      */
+      /**
+      Service to read (GET) the data for this instance. Services should return `false` if they are currently invalid.
+      @arg data - Data to be used during the read
+      @arg {Collection~successCallback} Success callback for the service
+      @arg {Collection~failCallback} Failure callback for the service
+      @abstract
+      @returns {boolean}
+      */
       readService: false,
-      read: function (data) {
+      /**
+      Uses the readService (if defined) to attempt to retrieve the data for the instance. Will finalize the instance.
+      @arg [data] - Data to be provided to the readService
+      @returns {Collection} `this`
+      */
+      read: function (data, idx) {
         var self = this,
             ret;
-        if (m_isFunction(self.readService)) {
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.read(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (_.m_isFunction(self.readService)) {
           self.$busy = true;
-          self.unfinalize();
           self.__lastReadData = data || {};
           ret = self.readService(
             data,
             function (data) {
+              delete self.$errors.read;
               self.set(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.read = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.read = true;
+            self.reject(idx);
           }
         }
         return self;
@@ -1686,31 +1888,44 @@ function CollectionFactory(Base, Singleton) {
       @arg [data] - Data to be provided to the updateService
       @returns {Collection} `this`
       */
-      update: function (data) {
+      update: function (data, idx) {
         var self = this,
             ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.update(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
         if (m_isFunction(self.updateService)) {
           self.$busy = true;
-          self.unfinalize();
           if (arguments.length === 0) {
-            return self.resolve();
+            delete self.$errors.update;
+            return self.resolve(idx);
           }
           ret = self.updateService(
             data,
             function (data) {
-              self.finalize(data);
-              self.resolve();
+              delete self.$errors.update;
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.update = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.update = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.update = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -1722,4 +1937,7 @@ function CollectionFactory(Base, Singleton) {
    */
   return Collection;
 }
-angular.module( 'angular-m' ).factory( 'Collection', [ 'Base', 'Singleton', CollectionFactory ] );})(window, window.angular);
+
+angular.module( 'angular-m' )
+  .factory( 'Collection', [ 'Base', 'Singleton', CollectionFactory ] );
+})(window, window.angular);
