@@ -17,14 +17,7 @@ module.exports = function (grunt) {
         ' * @license MIT License, http://www.opensource.org/licenses/MIT\n' +
         ' */'
     },
-    clean: {
-      build: {
-        src: '<%= builddir %>'
-      },
-      dist: {
-        src: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js']
-      }
-    },
+    clean: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js'],
     concat: {
       options: {
         banner: '<%= meta.banner %>\n\n'+
@@ -37,7 +30,7 @@ module.exports = function (grunt) {
       },
       build: {
         src: files.src,
-        dest: '<%= builddir %>/<%= pkg.name %>.js'
+        dest: '<%= pkg.name %>.js'
       }
     },
     uglify: {
@@ -46,17 +39,23 @@ module.exports = function (grunt) {
       },
       build: {
         files: {
-          '<%= builddir %>/<%= pkg.name %>.min.js': ['<banner:meta.banner>', '<%= concat.build.dest %>']
+          '<%= pkg.name %>.min.js': ['<banner:meta.banner>', '<%= concat.build.dest %>']
         }
       }
     },
     release: {
-      files: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js'],
-      src: '<%= builddir %>',
-      dest: '/'
+      options: {
+        additionalFiles: ['bower.json'],
+        beforeBump: ['build', 'prepare-release'],
+        afterRelease: ['post-release'],
+        github: {
+          accessTokenVar: 'ANGULAR-M-GITHUB-AUTH',
+          repo: 'dlhdesign/angular-m'
+        }
+      }
     },
     jshint: {
-      all: ['Gruntfile.js', 'src/*.js', '<%= builddir %>/<%= pkg.name %>.js'],
+      all: ['Gruntfile.js', 'src/*.js', '<%= pkg.name %>.js'],
       options: {
         eqnull: true
       }
@@ -128,10 +127,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('integrate', ['build', 'jshint', 'karma:unit']);
   grunt.registerTask('default', ['build', 'jshint', 'karma:unit']);
-  grunt.registerTask('build', 'Perform a normal build', ['clean:build', 'concat', 'uglify']);
-  grunt.registerTask('dist', 'Perform a clean build', ['clean:dist', 'build']);
-  grunt.registerTask('dist-docs', 'Perform a clean build and generate documentation', ['dist', 'ngdocs', 'widedocs']);
-  grunt.registerTask('release', 'Tag and perform a release', ['prepare-release', 'dist', 'perform-release']);
+  grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
+  grunt.registerTask('build-docs', 'Perform a clean build and generate documentation', ['build', 'ngdocs', 'widedocs']);
   grunt.registerTask('dev', 'Run dev server and watch for changes', ['build', 'connect:server', 'karma:background', 'watch']);
   grunt.registerTask('sample', 'Run connect server with keepalive:true for sample app development', ['connect:sample']);
 
@@ -177,38 +174,18 @@ module.exports = function (grunt) {
   });
 
   grunt.registerTask('prepare-release', function () {
-    var bower = grunt.file.readJSON('bower.json'),
-        version = bower.version;
-    if (version != grunt.config('pkg.version')) throw 'Version mismatch in bower.json';
-
     promising(this,
       ensureCleanMaster().then(function () {
-        return exec('git tag -l \'' + version + '\'');
-      }).then(function (result) {
-        if (result.stdout.trim() !== '') throw 'Tag \'' + version + '\' already exists';
-        grunt.config('buildtag', '');
-        grunt.config('builddir', 'release');
+        return exec('export ANGULAR-M-GITHUB-AUTH=5eb55319cbb82f51119c077b338bba63bfb9cbc0');
       })
     );
   });
 
-  grunt.registerTask('perform-release', function () {
-    grunt.task.requires([ 'prepare-release', 'dist' ]);
-
-    var version = grunt.config('pkg.version'), releasedir = grunt.config('builddir');
+  grunt.registerTask('post-release', function () {
     promising(this,
-      system('git add \'' + releasedir + '\'').then(function () {
-        return system('git commit -m \'release ' + version + '\'');
-      })
-      .then(function () {
-        return system('git push origin master');
-      })
-      .then(function () {
-        return system('curl --data \'{"tag_name": "' + version + '","target_commitish": "master","name": "' + version + '","body": "' + version + '","draft": false,"prerelease": true}\' https://api.github.com/repos/dlhdesign/angular-m/releases?access_token=5eb55319cbb82f51119c077b338bba63bfb9cbc0');
-      })
+      exec('unset ANGULAR-M-GITHUB-AUTH')
     );
   });
-
 
   // Helpers for custom tasks, mainly around promises / exec
   var exec = require('faithful-exec'), shjs = require('shelljs');
