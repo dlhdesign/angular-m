@@ -47,6 +47,7 @@ module.exports = function (grunt) {
         npm: false,
         tag: false,
         pushTags: false,
+        commit: false,
         tagMessage: '<%= version %>',
         additionalFiles: ['bower.json'],
         afterBump: ['pre-release'],
