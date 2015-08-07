@@ -12,4 +12,5 @@ function RegExConstant() {
   };
 }
 
-angular.module( 'angular-m' ).constant( 'REGEX', RegExConstant );
+angular.module( 'angular-m' )
+  .constant( 'REGEX', RegExConstant );

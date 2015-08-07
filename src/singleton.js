@@ -53,12 +53,12 @@ function SingletonFactory(Base, REGEX) {
       // type
       if ( indexOf(['st','nu','ob','ar','bo','dt'], fieldConfig.type ) > -1 ) {
         setError( this, fieldConfig.methodName, 'type', true );
-        if ( ( fieldConfig.type === 'st' && !isString(val) )
-          || ( fieldConfig.type === 'nu' && !(isNumber(val) || REGEX.number.test(val) ) )
-          || ( fieldConfig.type === 'ob' && !(isObject(val) || REGEX.object.test(val) ) )
-          || ( fieldConfig.type === 'ar' && !(isArray(val) || REGEX.array.test(val) ) )
-          || ( fieldConfig.type === 'bo' && !(isBoolean(val) || REGEX.boolean.test(val) ) )
-          || ( fieldConfig.type === 'dt' && !isDate(new Date(val)) )
+        if ( ( fieldConfig.type === 'st' && !m_isString(val) )
+          || ( fieldConfig.type === 'nu' && !(m_isNumber(val) || REGEX.number.test(val) ) )
+          || ( fieldConfig.type === 'ob' && !(m_isObject(val) || REGEX.object.test(val) ) )
+          || ( fieldConfig.type === 'ar' && !(m_isArray(val) || REGEX.array.test(val) ) )
+          || ( fieldConfig.type === 'bo' && !(m_isBoolean(val) || REGEX.boolean.test(val) ) )
+          || ( fieldConfig.type === 'dt' && !m_isDate(new Date(val)) )
         ) {
           setError( this, fieldConfig.methodName, 'type', true );
           ret = false;
@@ -66,7 +66,7 @@ function SingletonFactory(Base, REGEX) {
       }
 
       // min/max
-      if ( isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && isDate(fieldConfig.min) ) ) {
+      if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
           setError( this, fieldConfig.methodName, 'min', true );
         } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
@@ -78,7 +78,7 @@ function SingletonFactory(Base, REGEX) {
           ret = false;
         }
       }
-      if ( isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && isDate(fieldConfig.max) ) ) {
+      if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
           setError( this, fieldConfig.methodName, 'max', true );
         } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
@@ -95,29 +95,29 @@ function SingletonFactory(Base, REGEX) {
     }
 
     // matches
-    if ( isRegExp(fieldConfig.matches) ) {
-      matches = fieldConfig.matches.test(val) || ( isUndefined(val) || isNull(val) || val.length === 0 );
+    if ( m_isRegExp(fieldConfig.matches) ) {
+      matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
       setError( this, fieldConfig.methodName, 'matches', matches );
       ret = matches && ret;
     }
 
     // limit
-    if ( isArray(fieldConfig.limit) ) {
-      if ( isUndefined(val) || isNull(val) || val.length === 0 ) {
+    if ( m_isArray(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError( this, fieldConfig.methodName, 'limit', false );
       }
       limit = fieldConfig.limit.indexOf( val ) > -1;
       setError( this, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
-    } else if ( isObject(fieldConfig.limit) ) {
-      if ( isUndefined(val) || isNull(val) || val.length === 0 ) {
+    } else if ( m_isObject(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError( this, fieldConfig.methodName, 'limit', false );
       }
       limit = fieldConfig.limit.hasOwnProperty( val );
       setError( this, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
-    } else if ( isString(fieldConfig.limit) ) {
-      if ( isUndefined(val) || isNull(val) || val.length === 0 ) {
+    } else if ( m_isString(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError( this, fieldConfig.methodName, 'limit', false );
       }
       limit = fieldConfig.limit === val;
@@ -146,10 +146,10 @@ function SingletonFactory(Base, REGEX) {
         self.__fieldConfig = false;
 
         return self.each(function (fieldConfig) {
-          if ( fieldConfig.getter !== undefined && !isFunction(fieldConfig.getter) ) {
+          if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
             throw new Error('Singleton Init Error: "getter" must be undefined/null or a function');
           }
-          if ( fieldConfig.setter !== undefined && !isFunction(fieldConfig.setter) ) {
+          if ( fieldConfig.setter !== undefined && !m_isFunction(fieldConfig.setter) ) {
             throw new Error('Singleton Init Error: "setter" must be undefined/null or a function');
           }
           function getter() {
@@ -165,7 +165,7 @@ function SingletonFactory(Base, REGEX) {
               field = field.split( '.' );
               ret = self.get()[ field.shift() ];
               while ( field.length > 0 ) {
-                if ( isObject( ret ) === false ) {
+                if ( m_isObject( ret ) === false ) {
                   return null;
                 }
                 ret = ret[ field.shift() ];
@@ -173,7 +173,7 @@ function SingletonFactory(Base, REGEX) {
               if ( ( ret === null || ret === undefined ) && fieldConfig.default !== undefined ) {
                 ret = fieldConfig.default;
               }
-              if ( isFunction(fieldConfig.mutateGet) === true ) {
+              if ( m_isFunction(fieldConfig.mutateGet) === true ) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
               }
             }
@@ -201,9 +201,9 @@ function SingletonFactory(Base, REGEX) {
             target = self.__setData;
             while ( field.length > 1 ) {
               f = field.shift();
-              target = target[ f ] = isObject( target[ f ] ) === true ? target[ f ] : {};
+              target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
             }
-            if ( isFunction(fieldConfig.mutateSet) === true ) {
+            if ( m_isFunction(fieldConfig.mutateSet) === true ) {
               val = fieldConfig.mutateSet.call(self, val, fieldConfig);
             }
             target[field] = val;
@@ -236,7 +236,7 @@ function SingletonFactory(Base, REGEX) {
             if ( arguments.length === 0 ) {
               val = self[ fieldConfig.methodName ]();
             }
-            if ( isFunction( fieldConfig.validator ) ) {
+            if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
               setError( self, fieldConfig.methodName, 'validator', ret );
             }
@@ -268,7 +268,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         self.__merged = false;
         self.$dirty = true;
-        self.__setData = copy(val);
+        self.__setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
         self.clearCache();
         return self;
@@ -301,17 +301,17 @@ function SingletonFactory(Base, REGEX) {
       */
       each: function (cb) {
         var self = this;
-        if ( isObject(self.fields) && self.__fieldConfig === false ) {
+        if ( m_isObject(self.fields) && self.__fieldConfig === false ) {
           self.__fieldConfig = [];
-          forEach(self.fields,function (field, key) {
-            var fieldConfig = isFunction(field) ? field.apply(self, arguments) : isObject(field) ? copy(field) : {};
+          m_forEach(self.fields,function (field, key) {
+            var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? m_copy(field) : {};
             fieldConfig.key = fieldConfig.key || key;
             fieldConfig.methodName = fieldConfig.methodName || cap(key);
             self.__fieldConfig.push(fieldConfig);
           });
         }
-        if ( isArray(self.__fieldConfig) === true && self.__fieldConfig.length > 0 ) {
-          forEach(self.__fieldConfig, function (fieldConfig) {
+        if ( m_isArray(self.__fieldConfig) === true && self.__fieldConfig.length > 0 ) {
+          m_forEach(self.__fieldConfig, function (fieldConfig) {
             cb.call(self, fieldConfig);
           });
         }
@@ -363,7 +363,7 @@ function SingletonFactory(Base, REGEX) {
       clone: function() {
         var self = this,
             ret = self._super.apply(self, arguments);
-        ret.__data = copy(self.__data);
+        ret.__data = m_copy(self.__data);
         ret.set(self.__setData);
         ret.$loaded = self.$loaded;
         ret.$parent = self.$parent;
@@ -428,29 +428,42 @@ function SingletonFactory(Base, REGEX) {
       @arg [data] - Data to be provided to the readService
       @returns {Singleton} `this`
       */
-      read: function (data) {
+      read: function (data, idx) {
         var self = this,
-            ret;
-        if (isFunction(self.readService)) {
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.read(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (m_isFunction(self.readService)) {
           self.$busy = true;
-          self.unfinalize();
           self.__lastReadData = data || {};
           ret = self.readService(
             data,
             function (data) {
-              self.__data = data;
-              self.resolve();
+              delete self.$errors.read;
+              self.finalize(data);
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.read = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.read = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.read = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -468,35 +481,49 @@ function SingletonFactory(Base, REGEX) {
       @arg [data=this.__setData] - Data to be provided to the updateService
       @returns {Singleton} `this`
       */
-      update: function (data) {
+      update: function (data, idx) {
         var self = this,
-            ret;
-        if (isFunction(self.updateService)) {
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.update(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (m_isFunction(self.updateService)) {
           self.$busy = true;
-          self.unfinalize();
           if (arguments.length === 0) {
             if (self.$dirty === true) {
               data = self.__setData;
             } else {
-              return self.resolve();
+              delete self.$errors.update;
+              return self.resolve(idx);
             }
           }
           ret = self.updateService(
             data,
             function (data) {
+              delete self.$errors.update;
               self.finalize(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.update = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.update = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.update = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -514,28 +541,41 @@ function SingletonFactory(Base, REGEX) {
       @arg [data] - Data to be provided to the uploadService
       @returns {Singleton} `this`
       */
-      upload: function (data) {
+      upload: function (data, idx) {
         var self = this,
-            ret;
-        if (isFunction(self.uploadService)) {
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.upload(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (m_isFunction(self.uploadService)) {
           self.$busy = true;
-          self.unfinalize();
           ret = self.uploadService(
             data,
             function (data) {
+              delete self.$errors.upload;
               self.finalize(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.upload = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.upload = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.upload = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -553,35 +593,49 @@ function SingletonFactory(Base, REGEX) {
       @arg [data=this.get()] - Data to be provided to the createService
       @returns {Singleton} `this`
       */
-      create: function (data) {
+      create: function (data, idx) {
         var self = this,
-            ret;
-        if (isFunction(self.createService)) {
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.create(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (m_isFunction(self.createService)) {
           self.$busy = true;
-          self.unfinalize();
           if (arguments.length === 0) {
             if (self.$dirty === true) {
               data = self.get();
             } else {
-              return self.resolve();
+              delete self.$errors.create;
+              return self.resolve(idx);
             }
           }
           ret = self.createService(
             data,
             function (data) {
+              delete self.$errors.create;
               self.finalize(data);
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.create = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.create = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.create = true;
+          self.reject(idx);
         }
         return self;
       },
@@ -599,28 +653,41 @@ function SingletonFactory(Base, REGEX) {
       @arg [data] - Data to be provided to the deleteService
       @returns {Singleton} `this`
       */
-      delete: function (data) {
+      delete: function (data, idx) {
         var self = this,
-            ret;
-        if (isFunction(self.deleteService)) {
+          ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.delete(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (m_isFunction(self.deleteService)) {
           self.$busy = true;
-          self.unfinalize();
           ret = self.deleteService(
             data,
             function (data) {
+              delete self.$errors.delete;
               self.finalize(data || {});
-              self.resolve();
+              self.resolve(idx);
             },
             function (data) {
               self.$errors.delete = data;
-              self.reject();
+              self.reject(idx);
             }
           );
           if (ret === false) {
-            self.reject();
+            self.$errors.delete = true;
+            self.reject(idx);
           }
         } else {
-          self.reject();
+          self.$errors.delete = true;
+          self.reject(idx);
         }
         return self;
       }
@@ -631,4 +698,5 @@ function SingletonFactory(Base, REGEX) {
    */
   return Singleton;
 }
-angular.module( 'angular-m' ).factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );
+angular.module( 'angular-m' )
+  .factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );

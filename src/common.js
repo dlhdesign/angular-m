@@ -2,29 +2,28 @@
 /*global angular:false*/
 'use strict';
 
-var isDefined = angular.isDefined,
-    isFunction = angular.isFunction,
-    isString = angular.isString,
-    isNumber = angular.isNumber,
-    isObject = angular.isObject,
-    isArray = angular.isArray,
-    isDate = angular.isDate,
-    isUndefined = angular.isUndefined,
-    isBoolean = function(val) { return (val === true || val === false) ? true: false; },
-    isRegEx = function(val) { return Object.prototype.toString.call(val) === '[object RegExp]' ? true : false; },
-    isNull = function(val) { return val === null; },
-    forEach = angular.forEach,
-    extend = angular.extend,
-    copy = angular.copy;
+var m_isFunction = angular.isFunction,
+    m_isString = angular.isString,
+    m_isNumber = angular.isNumber,
+    m_isObject = angular.isObject,
+    m_isArray = angular.isArray,
+    m_isDate = angular.isDate,
+    m_isUndefined = angular.isUndefined,
+    m_isBoolean = function(val) { return (val === true || val === false) ? true: false; },
+    m_isRegEx = function(val) { return Object.prototype.toString.call(val) === '[object RegExp]' ? true : false; },
+    m_isNull = function(val) { return val === null; },
+    m_forEach = angular.forEach,
+    m_extend = angular.extend,
+    m_copy = angular.copy;
 
 function inherit(parent, extra) {
-  return extend(new (extend(function() {}, { prototype: parent }))(), extra);
+  return m_extend(new (m_extend(function() {}, { prototype: parent }))(), extra);
 }
 
 function merge(dst) {
-  forEach(arguments, function(obj) {
+  m_forEach(arguments, function(obj) {
     if (obj !== dst) {
-      forEach(obj, function(value, key) {
+      m_forEach(obj, function(value, key) {
         if (!dst.hasOwnProperty(key)) dst[key] = value;
       });
     }
@@ -44,7 +43,7 @@ function objectKeys(object) {
   }
   var result = [];
 
-  forEach(object, function(val, key) {
+  m_forEach(object, function(val, key) {
     result.push(key);
   });
   return result;
@@ -58,13 +57,17 @@ function objectKeys(object) {
  * @return {Number} Returns the array index value of `value`, or `-1` if not present.
  */
 function indexOf(array, value) {
+  var len = array.length >>> 0,
+      from = Number(arguments[2]) || 0;
+
   if (Array.prototype.indexOf) {
     return array.indexOf(value, Number(arguments[2]) || 0);
   }
-  var len = array.length >>> 0, from = Number(arguments[2]) || 0;
   from = (from < 0) ? Math.ceil(from) : Math.floor(from);
 
-  if (from < 0) from += len;
+  if (from < 0) {
+    from += len;
+  }
 
   for (; from < len; from++) {
     if (from in array && array[from] === value) return from;
@@ -75,18 +78,18 @@ function indexOf(array, value) {
 // extracted from underscore.js
 // Return a copy of the object only containing the whitelisted properties.
 function pick(obj) {
-  var copy = {};
-  var keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
-  forEach(keys, function(key) {
-    if (key in obj) copy[key] = obj[key];
+  var c = {},
+      keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
+  m_forEach(keys, function(key) {
+    if (key in obj) c[key] = obj[key];
   });
-  return copy;
+  return c;
 }
 
 function filter(collection, callback) {
-  var array = isArray(collection);
-  var result = array ? [] : {};
-  forEach(collection, function(val, i) {
+  var array = m_isArray(collection).
+      result = array ? [] : {};
+  m_forEach(collection, function(val, i) {
     if (callback(val, i)) {
       result[array ? result.length : i] = val;
     }
@@ -95,9 +98,9 @@ function filter(collection, callback) {
 }
 
 function map(collection, callback) {
-  var result = isArray(collection) ? [] : {};
+  var result = m_isArray(collection) ? [] : {};
 
-  forEach(collection, function(val, i) {
+  m_forEach(collection, function(val, i) {
     result[i] = callback(val, i);
   });
   return result;

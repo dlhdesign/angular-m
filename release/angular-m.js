@@ -15,29 +15,28 @@ if (typeof module !== "undefined" && typeof exports !== "undefined" && module.ex
 /*global angular:false*/
 'use strict';
 
-var isDefined = angular.isDefined,
-    isFunction = angular.isFunction,
-    isString = angular.isString,
-    isNumber = angular.isNumber,
-    isObject = angular.isObject,
-    isArray = angular.isArray,
-    isDate = angular.isDate,
-    isUndefined = angular.isUndefined,
-    isBoolean = function(val) { return (val === true || val === false) ? true: false; },
-    isRegEx = function(val) { return Object.prototype.toString.call(val) === '[object RegExp]' ? true : false; },
-    isNull = function(val) { return val === null; },
-    forEach = angular.forEach,
-    extend = angular.extend,
-    copy = angular.copy;
+var m_isFunction = angular.isFunction,
+    m_isString = angular.isString,
+    m_isNumber = angular.isNumber,
+    m_isObject = angular.isObject,
+    m_isArray = angular.isArray,
+    m_isDate = angular.isDate,
+    m_isUndefined = angular.isUndefined,
+    m_isBoolean = function(val) { return (val === true || val === false) ? true: false; },
+    m_isRegEx = function(val) { return Object.prototype.toString.call(val) === '[object RegExp]' ? true : false; },
+    m_isNull = function(val) { return val === null; },
+    m_forEach = angular.forEach,
+    m_extend = angular.extend,
+    m_copy = angular.copy;
 
 function inherit(parent, extra) {
-  return extend(new (extend(function() {}, { prototype: parent }))(), extra);
+  return m_extend(new (m_extend(function() {}, { prototype: parent }))(), extra);
 }
 
 function merge(dst) {
-  forEach(arguments, function(obj) {
+  m_forEach(arguments, function(obj) {
     if (obj !== dst) {
-      forEach(obj, function(value, key) {
+      m_forEach(obj, function(value, key) {
         if (!dst.hasOwnProperty(key)) dst[key] = value;
       });
     }
@@ -57,7 +56,7 @@ function objectKeys(object) {
   }
   var result = [];
 
-  forEach(object, function(val, key) {
+  m_forEach(object, function(val, key) {
     result.push(key);
   });
   return result;
@@ -90,16 +89,16 @@ function indexOf(array, value) {
 function pick(obj) {
   var copy = {};
   var keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
-  forEach(keys, function(key) {
+  m_forEach(keys, function(key) {
     if (key in obj) copy[key] = obj[key];
   });
   return copy;
 }
 
 function filter(collection, callback) {
-  var array = isArray(collection);
+  var array = m_isArray(collection);
   var result = array ? [] : {};
-  forEach(collection, function(val, i) {
+  m_forEach(collection, function(val, i) {
     if (callback(val, i)) {
       result[array ? result.length : i] = val;
     }
@@ -108,9 +107,9 @@ function filter(collection, callback) {
 }
 
 function map(collection, callback) {
-  var result = isArray(collection) ? [] : {};
+  var result = m_isArray(collection) ? [] : {};
 
-  forEach(collection, function(val, i) {
+  m_forEach(collection, function(val, i) {
     result[i] = callback(val, i);
   });
   return result;
@@ -158,12 +157,12 @@ function HTTPService($rootScope, $http) {
     config.method = config.method || METHODS.read;
     return $http(config)
       .success(function (data) {
-        if (isFunction(success)) {
+        if (m_isFunction(success)) {
           success(data);
         }
       })
       .error(function (data) {
-        if (isFunction(fail)) {
+        if (m_isFunction(fail)) {
           fail(data);
         }
       });
@@ -236,7 +235,7 @@ function BaseFactory() {
     var self = this,
         queue, cb;
     if (self.isFinal()) {
-      queue = copy(self.__cbQueue);
+      queue = m_m_copy(self.__cbQueue);
       self.__cbQueue = [];
       /*jshint -W084 */
       while(cb = queue.shift()) {
@@ -294,7 +293,7 @@ function BaseFactory() {
     init: function ( data, forClone) {
       /*jshint unused:false */
       var self = this;
-      self.__arguments = copy(arguments);
+      self.__arguments = m_copy(arguments);
       self.__cbQueue = [];
       self.__listeners = {};
       self.$errors = {};
@@ -383,13 +382,13 @@ function BaseFactory() {
     */
     then: function(success, fail) {
       var self = this;
-      if (isFunction(success)) {
+      if (m_isFunction(success)) {
         self.__cbQueue.push({
           type: 1,
           cb: success
         });
       }
-      if (isFunction(fail)) {
+      if (m_isFunction(fail)) {
         self.__cbQueue.push({
           type: 3,
           cb: fail
@@ -411,7 +410,7 @@ function BaseFactory() {
     */
     always: function (always) {
       var self = this;
-      if (isFunction(always)) {
+      if (m_isFunction(always)) {
         self.__cbQueue.push({
           type: 2,
           cb: always
@@ -446,7 +445,7 @@ function BaseFactory() {
     */
     bind: function (type, cb) {
       var self = this;
-      if (isString(type) && isFunction(cb)) {
+      if (m_isString(type) && m_isFunction(cb)) {
         self.__listeners[type] = self.__listeners[type] || [];
         self.__listeners[type].push(cb);
       }
@@ -461,8 +460,8 @@ function BaseFactory() {
     unbind: function (type, listener) {
       var self = this,
           idx;
-      if (isString(type) && isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
-        if (isFunction(listener)) {
+      if (m_isString(type) && m_isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
+        if (m_isFunction(listener)) {
           self.__listeners[type] = filter(self.__listeners[type], function (cb) {
             return cb !== listener;
           });
@@ -481,7 +480,7 @@ function BaseFactory() {
     one: function (type, cb) {
       var self = this,
           wrap;
-      if (isString(type) && isFunction(cb)) {
+      if (m_isString(type) && m_isFunction(cb)) {
         wrap = function () {
           cb.call(this, arguments);
           self.unbind(type, wrap);
@@ -499,8 +498,8 @@ function BaseFactory() {
     trigger: function (type, data) {
       var self = this,
           ret = true;
-      if (isString(type) && isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
-        forEach(self.__listeners[type], function (cb) {
+      if (m_isString(type) && m_isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
+        m_forEach(self.__listeners[type], function (cb) {
           ret = cb.call(self, data, type) && ret;
         });
       }
@@ -527,7 +526,7 @@ function BaseFactory() {
     
     for ( key in properties ) {
       if ( properties.hasOwnProperty( key ) ) {
-        if ( isFunction( properties[ key ] ) && isFunction( _super[ key ] ) && superPattern.test( properties[ key ] ) ) {
+        if ( m_isFunction( properties[ key ] ) && m_isFunction( _super[ key ] ) && superPattern.test( properties[ key ] ) ) {
           proto[ key ] = (function( key, fn ) {
             return function() {
               var tmp = this._super,
@@ -535,7 +534,7 @@ function BaseFactory() {
 
               this._super = _super[ key ];
               ret = fn.apply( this, arguments );
-              if ( isFunction( tmp ) ) {
+              if ( m_isFunction( tmp ) ) {
                 this._super = tmp;
               } else {
                 delete this._super;
@@ -552,7 +551,7 @@ function BaseFactory() {
       properties.type = 'Object';
     }
     function Class() {
-      if ( !initializing && isFunction( this.init ) ) {
+      if ( !initializing && m_isFunction( this.init ) ) {
         return this.init.apply(this, arguments);
       }
     }
@@ -630,12 +629,12 @@ function SingletonFactory(Base, REGEX) {
       // type
       if ( indexOf(['st','nu','ob','ar','bo','dt'], fieldConfig.type ) > -1 ) {
         setError( this, fieldConfig.methodName, 'type', true );
-        if ( ( fieldConfig.type === 'st' && !isString(val) )
-          || ( fieldConfig.type === 'nu' && !(isNumber(val) || REGEX.number.test(val) ) )
-          || ( fieldConfig.type === 'ob' && !(isObject(val) || REGEX.object.test(val) ) )
-          || ( fieldConfig.type === 'ar' && !(isArray(val) || REGEX.array.test(val) ) )
-          || ( fieldConfig.type === 'bo' && !(isBoolean(val) || REGEX.boolean.test(val) ) )
-          || ( fieldConfig.type === 'dt' && !isDate(new Date(val)) )
+        if ( ( fieldConfig.type === 'st' && !m_isString(val) )
+          || ( fieldConfig.type === 'nu' && !(m_isNumber(val) || REGEX.number.test(val) ) )
+          || ( fieldConfig.type === 'ob' && !(m_isObject(val) || REGEX.object.test(val) ) )
+          || ( fieldConfig.type === 'ar' && !(m_isArray(val) || REGEX.array.test(val) ) )
+          || ( fieldConfig.type === 'bo' && !(m_isBoolean(val) || REGEX.boolean.test(val) ) )
+          || ( fieldConfig.type === 'dt' && !m_isDate(new Date(val)) )
         ) {
           setError( this, fieldConfig.methodName, 'type', true );
           ret = false;
@@ -643,7 +642,7 @@ function SingletonFactory(Base, REGEX) {
       }
 
       // min/max
-      if ( isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && isDate(fieldConfig.min) ) ) {
+      if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
           setError( this, fieldConfig.methodName, 'min', true );
         } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
@@ -655,7 +654,7 @@ function SingletonFactory(Base, REGEX) {
           ret = false;
         }
       }
-      if ( isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && isDate(fieldConfig.max) ) ) {
+      if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
           setError( this, fieldConfig.methodName, 'max', true );
         } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
@@ -672,29 +671,29 @@ function SingletonFactory(Base, REGEX) {
     }
 
     // matches
-    if ( isRegExp(fieldConfig.matches) ) {
-      matches = fieldConfig.matches.test(val) || ( isUndefined(val) || isNull(val) || val.length === 0 );
+    if ( m_isRegExp(fieldConfig.matches) ) {
+      matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
       setError( this, fieldConfig.methodName, 'matches', matches );
       ret = matches && ret;
     }
 
     // limit
-    if ( isArray(fieldConfig.limit) ) {
-      if ( isUndefined(val) || isNull(val) || val.length === 0 ) {
+    if ( m_isArray(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError( this, fieldConfig.methodName, 'limit', false );
       }
       limit = fieldConfig.limit.indexOf( val ) > -1;
       setError( this, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
-    } else if ( isObject(fieldConfig.limit) ) {
-      if ( isUndefined(val) || isNull(val) || val.length === 0 ) {
+    } else if ( m_isObject(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError( this, fieldConfig.methodName, 'limit', false );
       }
       limit = fieldConfig.limit.hasOwnProperty( val );
       setError( this, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
-    } else if ( isString(fieldConfig.limit) ) {
-      if ( isUndefined(val) || isNull(val) || val.length === 0 ) {
+    } else if ( m_isString(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError( this, fieldConfig.methodName, 'limit', false );
       }
       limit = fieldConfig.limit === val;
@@ -723,10 +722,10 @@ function SingletonFactory(Base, REGEX) {
         self.__fieldConfig = false;
 
         return self.each(function (fieldConfig) {
-          if ( fieldConfig.getter !== undefined && !isFunction(fieldConfig.getter) ) {
+          if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
             throw new Error('Singleton Init Error: "getter" must be undefined/null or a function');
           }
-          if ( fieldConfig.setter !== undefined && !isFunction(fieldConfig.setter) ) {
+          if ( fieldConfig.setter !== undefined && !m_isFunction(fieldConfig.setter) ) {
             throw new Error('Singleton Init Error: "setter" must be undefined/null or a function');
           }
           function getter() {
@@ -742,7 +741,7 @@ function SingletonFactory(Base, REGEX) {
               field = field.split( '.' );
               ret = self.get()[ field.shift() ];
               while ( field.length > 0 ) {
-                if ( isObject( ret ) === false ) {
+                if ( m_isObject( ret ) === false ) {
                   return null;
                 }
                 ret = ret[ field.shift() ];
@@ -750,7 +749,7 @@ function SingletonFactory(Base, REGEX) {
               if ( ( ret === null || ret === undefined ) && fieldConfig.default !== undefined ) {
                 ret = fieldConfig.default;
               }
-              if ( isFunction(fieldConfig.mutateGet) === true ) {
+              if ( m_isFunction(fieldConfig.mutateGet) === true ) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
               }
             }
@@ -778,9 +777,9 @@ function SingletonFactory(Base, REGEX) {
             target = self.__setData;
             while ( field.length > 1 ) {
               f = field.shift();
-              target = target[ f ] = isObject( target[ f ] ) === true ? target[ f ] : {};
+              target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
             }
-            if ( isFunction(fieldConfig.mutateSet) === true ) {
+            if ( m_isFunction(fieldConfig.mutateSet) === true ) {
               val = fieldConfig.mutateSet.call(self, val, fieldConfig);
             }
             target[field] = val;
@@ -813,7 +812,7 @@ function SingletonFactory(Base, REGEX) {
             if ( arguments.length === 0 ) {
               val = self[ fieldConfig.methodName ]();
             }
-            if ( isFunction( fieldConfig.validator ) ) {
+            if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
               setError( self, fieldConfig.methodName, 'validator', ret );
             }
@@ -878,17 +877,17 @@ function SingletonFactory(Base, REGEX) {
       */
       each: function (cb) {
         var self = this;
-        if ( isObject(self.fields) && self.__fieldConfig === false ) {
+        if ( m_isObject(self.fields) && self.__fieldConfig === false ) {
           self.__fieldConfig = [];
-          forEach(self.fields,function (field, key) {
-            var fieldConfig = isFunction(field) ? field.apply(self, arguments) : isObject(field) ? copy(field) : {};
+          m_forEach(self.fields,function (field, key) {
+            var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? copy(field) : {};
             fieldConfig.key = fieldConfig.key || key;
             fieldConfig.methodName = fieldConfig.methodName || cap(key);
             self.__fieldConfig.push(fieldConfig);
           });
         }
-        if ( isArray(self.__fieldConfig) === true && self.__fieldConfig.length > 0 ) {
-          forEach(self.__fieldConfig, function (fieldConfig) {
+        if ( m_isArray(self.__fieldConfig) === true && self.__fieldConfig.length > 0 ) {
+          m_forEach(self.__fieldConfig, function (fieldConfig) {
             cb.call(self, fieldConfig);
           });
         }
@@ -1008,7 +1007,7 @@ function SingletonFactory(Base, REGEX) {
       read: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.readService)) {
+        if (m_isFunction(self.readService)) {
           self.$busy = true;
           self.unfinalize();
           self.__lastReadData = data || {};
@@ -1048,7 +1047,7 @@ function SingletonFactory(Base, REGEX) {
       update: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.updateService)) {
+        if (m_isFunction(self.updateService)) {
           self.$busy = true;
           self.unfinalize();
           if (arguments.length === 0) {
@@ -1094,7 +1093,7 @@ function SingletonFactory(Base, REGEX) {
       upload: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.uploadService)) {
+        if (m_isFunction(self.uploadService)) {
           self.$busy = true;
           self.unfinalize();
           ret = self.uploadService(
@@ -1133,7 +1132,7 @@ function SingletonFactory(Base, REGEX) {
       create: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.createService)) {
+        if (m_isFunction(self.createService)) {
           self.$busy = true;
           self.unfinalize();
           if (arguments.length === 0) {
@@ -1179,7 +1178,7 @@ function SingletonFactory(Base, REGEX) {
       delete: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.deleteService)) {
+        if (m_isFunction(self.deleteService)) {
           self.$busy = true;
           self.unfinalize();
           ret = self.deleteService(
@@ -1247,13 +1246,13 @@ function CollectionFactory(Base, Singleton) {
   function getValue(field, obj) {
     var val,
         f;
-    if (isString(field) && field.length > 0) {
+    if (m_isString(field) && field.length > 0) {
       field = field.split('.');
       while (field.length > 0) {
         f = field.shift();
-        if (isFunction(obj[f]) === false) {
+        if (m_isFunction(obj[f]) === false) {
           val = obj[f]();
-        } else if (isObject(val) === false) {
+        } else if (m_isObject(val) === false) {
           return undefined;
         } else {
           val = obj[f];
@@ -1323,8 +1322,8 @@ function CollectionFactory(Base, Singleton) {
       */
       each: function (cb, data) {
         var self = this;
-        if (isFunction(cb) === true) {
-          forEach(self.get(), cb);
+        if (m_isFunction(cb) === true) {
+          m_forEach(self.get(), cb);
         }
         return self;
       },
@@ -1338,7 +1337,7 @@ function CollectionFactory(Base, Singleton) {
           return self.__modeled;
         }
         self.__modeled = new Array(self.length);
-        forEach(self.__data, function (obj, i) {
+        m_forEach(self.__data, function (obj, i) {
           var ret = new self.childModel(obj);
           ret.$parent = self;
           ret.select = function (value, forBulk) {
@@ -1382,7 +1381,7 @@ function CollectionFactory(Base, Singleton) {
       add: function (obj) {
         var self = this,
             ret = [];
-        if (isUndefined(obj) || obj === null) {
+        if (m_isUndefined(obj) || obj === null) {
           ret.push({});
         } else if (obj instanceof self.childModel) {
           ret.push(obj);
@@ -1390,16 +1389,16 @@ function CollectionFactory(Base, Singleton) {
           ret.push(obj.get());
         } else if (obj instanceof Collection) {
           ret = ret.concat(obj.get());
-        } else if (isArray(obj) === true) {
-          forEach(obj, function (i, val) {
+        } else if (m_isArray(obj) === true) {
+          m_forEach(obj, function (i, val) {
             ret.push(val);
           });
-        } else if (isObject(obj) === true) {
+        } else if (m_isObject(obj) === true) {
           ret.push(obj);
         } else {
           throw new Error('Invalid object added to Collection: ' + obj);
         }
-        forEach(ret, function (obj, i) {
+        m_forEach(ret, function (obj, i) {
           if ((obj instanceof self.childModel) === false) {
             if (obj instanceof Singleton) {
               obj = obj.get();
@@ -1419,7 +1418,7 @@ function CollectionFactory(Base, Singleton) {
           }
         });
         self.__addData = ret;
-        if (obj instanceof Collection || isArray(obj) === true) {
+        if (obj instanceof Collection || m_isArray(obj) === true) {
           return ret;
         } else {
           return ret[0];
@@ -1429,14 +1428,14 @@ function CollectionFactory(Base, Singleton) {
         var self = this,
             newData = [];
         if (self.__data.length > 0) {
-          if (isFunction(_filter) === true) {
+          if (m_isFunction(_filter) === true) {
             self.__filter = _filter;
             self.select(false);
             self.__origData = self.__origData || copy(self.__data);
             self.__data = filter(self.get(), _filter);
             self.length = self.__data.length;
             self.__modeled = null;
-          } else if (isObject(_filter) === true) {
+          } else if (m_isObject(_filter) === true) {
             if (keys(_filter).length > 0) {
               self.__filter = filter;
               self.select(false);
@@ -1445,7 +1444,7 @@ function CollectionFactory(Base, Singleton) {
                 var ret = true;
                 pick(filter, function (v, k) {
                   var value;
-                  if (isFunction(val[k]) === true) {
+                  if (m_isFunction(val[k]) === true) {
                     value = val[k]();
                   } else {
                     value = val[k];
@@ -1476,14 +1475,14 @@ function CollectionFactory(Base, Singleton) {
 
         function compare(f, descending) {
           var field  = f;
-          if (isFunction(f) === false) {
+          if (m_isFunction(f) === false) {
             f = function (a, b) {
               a = getValue(field, a);
               b = getValue(field, b);
-              if (isObject(a)) {
+              if (m_isObject(a)) {
                 a = JSON.stringify(a);
               }
-              if (isObject(b)) {
+              if (m_isObject(b)) {
                 b = JSON.stringify(b);
               }
               if (preserveCase !== true) {
@@ -1511,14 +1510,14 @@ function CollectionFactory(Base, Singleton) {
         }
 
         if (self.length > 0) {
-          if (isString(sort) === true) {
+          if (m_isString(sort) === true) {
             sort = sort.split();
           }
-          if (isFunction(sort) === true) {
+          if (m_isFunction(sort) === true) {
             self.__sort = sort;
             self.__origData = self.__origData || copy(self.__data);
             self.__modeled = self.get().sort(sort);
-          } else if (isArray(sort) === true && sort.length > 0) {
+          } else if (m_isArray(sort) === true && sort.length > 0) {
             self.__origData = self.__origData || copy(self.__data);
             len = sort.reverse().length;
             while (len--) {
@@ -1563,12 +1562,12 @@ function CollectionFactory(Base, Singleton) {
         var self = this,
             uniques = {},
             ret = [];
-        if (isString(field) && field.length > 0) {
+        if (m_isString(field) && field.length > 0) {
           self.each(function (i, obj) {
             var val = getValue(field, obj);
-            if (isArray(val) === true) {
-              forEach(val, function(v) {
-                if (isObject(v) === true) {
+            if (m_isArray(val) === true) {
+              m_forEach(val, function(v) {
+                if (m_isObject(v) === true) {
                   v = JSON.stringify(v);
                 }
                 if (uniques[v.toString()] === undefined) {
@@ -1577,7 +1576,7 @@ function CollectionFactory(Base, Singleton) {
                 }
               });
             } else  {
-              if (isObject(val) === true) {
+              if (m_isObject(val) === true) {
                 val = JSON.stringify(val);
               }
               if (uniques[val.toString()] === undefined) {
@@ -1603,7 +1602,7 @@ function CollectionFactory(Base, Singleton) {
           });
           self.$selected = [];
           self.$selectedCount = 0;
-        } else if (isNumber(index) === true) {
+        } else if (m_isNumber(index) === true) {
           self.get()[index].select(value);
         }
         evalSelected.call(self);
@@ -1652,7 +1651,7 @@ function CollectionFactory(Base, Singleton) {
       read: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.readService)) {
+        if (m_isFunction(self.readService)) {
           self.$busy = true;
           self.unfinalize();
           self.__lastReadData = data || {};
@@ -1690,7 +1689,7 @@ function CollectionFactory(Base, Singleton) {
       update: function (data) {
         var self = this,
             ret;
-        if (isFunction(self.updateService)) {
+        if (m_isFunction(self.updateService)) {
           self.$busy = true;
           self.unfinalize();
           if (arguments.length === 0) {

@@ -1,4 +1,4 @@
-function HTTPService($rootScope, $http) {
+function HTTPService($rootScope, $http, $q) {
 
   var METHODS = {
     read: 'GET',
@@ -7,20 +7,34 @@ function HTTPService($rootScope, $http) {
     delete: 'DELETE'
   };
 
+  var offlineError = {online: false};
+
   function callHTTP(config, success, fail) {
+    var deferred = $q.defer(),
+        isOnline = m_isBoolean(navigator.onLine) ? navigator.onLine : true;
+
     config = config || {};
     config.method = config.method || METHODS.read;
-    return $http(config)
-      .success(function (data) {
-        if (isFunction(success)) {
-          success(data);
-        }
-      })
-      .error(function (data) {
-        if (isFunction(fail)) {
-          fail(data);
-        }
-      });
+
+    if (isOnline === false) {
+      fail(offlineError);
+      deferred.reject(offlineError);
+    } else {    
+      $http(config)
+        .success(function (data) {
+          if (m_isFunction(success)) {
+            success(data);
+          }
+          deferred.resolve(data);
+        })
+        .error(function (data) {
+          if (m_isFunction(fail)) {
+            fail(data);
+          }
+          deferred.reject(data);
+        });
+    }
+    return deferred;
   }
 
   function callRead(config, success, fail) {
@@ -63,4 +77,6 @@ function HTTPService($rootScope, $http) {
     deleteList: callDelete
   };
 }
-angular.module( 'angular-m.http', [] ).service( '$mhttp', [ '$rootScope', '$http', HTTPService ] );
+
+angular.module( 'angular-m.http', [] )
+  .service( '$mhttp', [ '$rootScope', '$http', '$q', HTTPService ] );
