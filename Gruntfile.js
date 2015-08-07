@@ -47,8 +47,9 @@ module.exports = function (grunt) {
         npm: false,
         tag: false,
         pushTags: false,
+        tagMessage: '<%= version %>',
         additionalFiles: ['bower.json'],
-        afterBump: ['build'],
+        afterBump: ['pre-release'],
         github: {
           accessTokenVar: 'ANGULARMGITAUTH',
           repo: 'dlhdesign/angular-m'
@@ -128,6 +129,17 @@ module.exports = function (grunt) {
 
   grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
   grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
+
+  grunt.registerTask('pre-release', function () {
+    grunt.task.requires(['build']);
+
+    promising(this,
+      system('git add -A')
+      .then(function() {
+        return system('git commit -m \'pre-release commit\'');
+      })
+    );
+  });
 
   // Helpers for custom tasks, mainly around promises / exec
   var exec = require('faithful-exec'), shjs = require('shelljs');
