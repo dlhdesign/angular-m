@@ -126,7 +126,7 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('build', 'Perform a normal build', ['env', 'clean', 'concat', 'uglify']);
+  grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
   grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
 
   // Helpers for custom tasks, mainly around promises / exec
