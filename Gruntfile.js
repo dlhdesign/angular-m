@@ -130,16 +130,22 @@ module.exports = function (grunt) {
   grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
   grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
 
-  grunt.registerTask('pre-release', function () {
-    grunt.task.requires(['build']);
-
+  
+  grunt.registerTask('updateVersion', function () {
+    grunt.config('pkg', grunt.file.readJSON('package.json'));
+  });
+  grunt.registerTask('pushToGit', function () {
     promising(this,
       system('git add -A')
-      .then(function() {
-        return system('git commit -m \'pre-release commit\'');
+      .then(function () {
+        return system('git commit -m \'pre-release commit for ' + grunt.config('pkg.version') + '\'');
+      })
+      .then(function () {
+        return system('git push origin master');
       })
     );
   });
+  grunt.registerTask('pre-release', ['updateVersion', 'build', 'pushToGit']);
 
   // Helpers for custom tasks, mainly around promises / exec
   var exec = require('faithful-exec'), shjs = require('shelljs');

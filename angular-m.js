@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.6-dev-2015-08-07
+ * @version v0.1.7
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -769,7 +769,7 @@ function SingletonFactory(Base, REGEX) {
     }
 
     // matches
-    if ( m_isRegExp(fieldConfig.matches) ) {
+    if ( m_isRegEx(fieldConfig.matches) ) {
       matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
       setError( this, fieldConfig.methodName, 'matches', matches );
       ret = matches && ret;
