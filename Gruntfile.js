@@ -45,6 +45,7 @@ module.exports = function (grunt) {
     },
     release: {
       options: {
+        bump: false,
         additionalFiles: ['bower.json'],
         beforeRelease: ['build', 'prepare-release'],
         afterRelease: ['post-release'],
@@ -133,12 +134,6 @@ module.exports = function (grunt) {
 
     promising(this,
       system('git add -A')
-      .then(function () {
-        return system('git commit -m \'release ' + version + '\'');
-      })
-      .then(function () {
-        return system('git push origin master');
-      })
       .then(function () {
         return exec('export ANGULAR-M-GITHUB-AUTH=5eb55319cbb82f51119c077b338bba63bfb9cbc0');
       })
