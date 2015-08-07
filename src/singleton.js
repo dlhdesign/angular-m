@@ -95,7 +95,7 @@ function SingletonFactory(Base, REGEX) {
     }
 
     // matches
-    if ( m_isRegExp(fieldConfig.matches) ) {
+    if ( m_isRegEx(fieldConfig.matches) ) {
       matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
       setError( this, fieldConfig.methodName, 'matches', matches );
       ret = matches && ret;

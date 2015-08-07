@@ -48,7 +48,7 @@ module.exports = function (grunt) {
         tag: false,
         pushTags: false,
         additionalFiles: ['bower.json'],
-        beforeRelease: ['build'],
+        afterBump: ['build'],
         github: {
           accessTokenVar: 'ANGULARMGITAUTH',
           repo: 'dlhdesign/angular-m'
