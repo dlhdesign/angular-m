@@ -43,15 +43,21 @@ module.exports = function (grunt) {
         }
       }
     },
+    env: {
+      options : {
+        ANGULARMGITAUTH: '5eb55319cbb82f51119c077b338bba63bfb9cbc0'
+      }
+    },
     release: {
       options: {
-        bump: false,
         npm: false,
+        tag: false,
+        pushTags: false,
+        tagMessage: '<%=version%>',
         additionalFiles: ['bower.json'],
-        beforeRelease: ['build', 'prepare-release'],
-        afterRelease: ['post-release'],
+        beforeRelease: ['build'],
         github: {
-          accessTokenVar: 'ANGULAR-M-GITHUB-AUTH',
+          accessTokenVar: 'ANGULARMGITAUTH',
           repo: 'dlhdesign/angular-m'
         }
       }
@@ -127,25 +133,8 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
+  grunt.registerTask('build', 'Perform a normal build', ['env', 'clean', 'concat', 'uglify']);
   grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
-
-  grunt.registerTask('prepare-release', function () {
-    var version = grunt.config('pkg.version');
-
-    promising(this,
-      system('git add -A')
-      .then(function () {
-        return exec('export ANGULAR-M-GITHUB-AUTH=5eb55319cbb82f51119c077b338bba63bfb9cbc0');
-      })
-    );
-  });
-
-  grunt.registerTask('post-release', function () {
-    promising(this,
-      exec('unset ANGULAR-M-GITHUB-AUTH')
-    );
-  });
 
   // Helpers for custom tasks, mainly around promises / exec
   var exec = require('faithful-exec'), shjs = require('shelljs');
