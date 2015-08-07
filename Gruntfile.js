@@ -46,6 +46,7 @@ module.exports = function (grunt) {
     release: {
       options: {
         bump: false,
+        npm: false,
         additionalFiles: ['bower.json'],
         beforeRelease: ['build', 'prepare-release'],
         afterRelease: ['post-release'],
