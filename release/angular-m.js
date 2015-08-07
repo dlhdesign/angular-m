@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.1
+ * @version v0.1.2
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1940,4 +1940,39 @@ function CollectionFactory(Base, Singleton) {
 
 angular.module( 'angular-m' )
   .factory( 'Collection', [ 'Base', 'Singleton', CollectionFactory ] );
+
+'use strict';
+
+function input() {
+  return {
+    restrict: 'E',
+    require: '?ngModel',
+    link: function (scope, element, attrs, ctrl) {
+      var model = scope.$eval(attrs.ngModel);
+
+      function setValidity() {
+        _.forOwn(model.$errors, function (v, k) {
+          ctrl.$setValidity(k, v);
+        });
+      }
+
+      function validate(val) {
+        model.valid(val);
+        setValidity();
+        return val;
+      }
+
+      if (!_.isFunction(model) || !_.isFunction(model.valid)) {
+        return;
+      }
+
+      ctrl.$parsers.unshift(validate);
+      ctrl.$formatters.unshift(validate);
+    }
+  };
+}
+
+angular.module('angular-m.inputs', [])
+  .directive('input', input)
+  .directive('select', input);
 })(window, window.angular);
