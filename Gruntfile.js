@@ -46,7 +46,7 @@ module.exports = function (grunt) {
     release: {
       options: {
         additionalFiles: ['bower.json'],
-        beforeBump: ['build', 'prepare-release'],
+        beforeRelease: ['build', 'prepare-release'],
         afterRelease: ['post-release'],
         github: {
           accessTokenVar: 'ANGULAR-M-GITHUB-AUTH',
@@ -125,57 +125,21 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('integrate', ['build', 'jshint', 'karma:unit']);
-  grunt.registerTask('default', ['build', 'jshint', 'karma:unit']);
   grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
-  grunt.registerTask('build-docs', 'Perform a clean build and generate documentation', ['build', 'ngdocs', 'widedocs']);
-  grunt.registerTask('dev', 'Run dev server and watch for changes', ['build', 'connect:server', 'karma:background', 'watch']);
-  grunt.registerTask('sample', 'Run connect server with keepalive:true for sample app development', ['connect:sample']);
-
-  grunt.registerTask('widedocs', 'Convert to bootstrap container-fluid', function () {
-    promising(this,
-      system(
-      'sed -i.bak ' + 
-      '-e \'s/class="row"/class="row-fluid"/\' ' + 
-      '-e \'s/icon-cog"><\\/i>/icon-cog"><\\/i>Provider/\' ' + 
-      '-e \'s/role="main" class="container"/role="main" class="container-fluid"/\' site/index.html')
-    );
-  });
-
-
-  grunt.registerTask('publish-pages', 'Publish a clean build, docs, and sample to github.io', function () {
-    promising(this,
-      ensureCleanMaster().then(function () {
-        shjs.rm('-rf', 'build');
-        return system('git checkout gh-pages');
-      }).then(function () {
-        return system('git merge master');
-      }).then(function () {
-        return system('grunt dist-docs');
-      }).then(function () {
-        return system('git commit -a -m \'Automatic gh-pages build\'');
-      }).then(function () {
-        return system('git checkout master');
-      })
-    );
-  });
-
-  grunt.registerTask('push-pages', 'Push published pages', function () {
-    promising(this,
-      ensureCleanMaster().then(function () {
-        shjs.rm('-rf', 'build');
-        return system('git checkout gh-pages');
-      }).then(function () {
-        return system('git push origin gh-pages');
-      }).then(function () {
-        return system('git checkout master');
-      })
-    );
-  });
+  grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
 
   grunt.registerTask('prepare-release', function () {
+    var version = grunt.config('pkg.version');
+
     promising(this,
-      ensureCleanMaster().then(function () {
+      system('git add -A')
+      .then(function () {
+        return system('git commit -m \'release ' + version + '\'');
+      })
+      .then(function () {
+        return system('git push origin master');
+      })
+      .then(function () {
         return exec('export ANGULAR-M-GITHUB-AUTH=5eb55319cbb82f51119c077b338bba63bfb9cbc0');
       })
     );
