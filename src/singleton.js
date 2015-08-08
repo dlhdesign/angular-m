@@ -26,6 +26,11 @@ function SingletonFactory(Base, REGEX) {
   function cap(str) {
     return str.charAt(0).toLowerCase() + str.slice(1).replace(/_([a-z])/g, function( _, l ){ return l.toUpperCase(); });
   }
+  function label(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).replace(/_([a-z])/g, function (v, l) {
+      return ' ' + l.toUpperCase();
+    });
+  }
   function setError(self, field, key, value) {
     self.$errors[ field ] = self.$errors[ field ] || {};
     self.$errors[ field ][ key ] = value;
@@ -143,6 +148,7 @@ function SingletonFactory(Base, REGEX) {
         self.__setData = {};
         self.$loaded = data ? true : false;
         self.$dirty = false;
+        self.$busy = false;
         self.__fieldConfig = false;
 
         return self.each(function (fieldConfig) {
@@ -229,6 +235,8 @@ function SingletonFactory(Base, REGEX) {
             }
             return getter.call(self[ fieldConfig.methodName ]);
           };
+          self[ fieldConfig.methodName ].$label = fieldConfig.label || label(fieldConfig.configKey);
+          fieldConfig.label = self[fieldConfig.methodName].$label;
           self[ fieldConfig.methodName ].$errors = {};
           self[ fieldConfig.methodName ].$config = fieldConfig;
           self[ fieldConfig.methodName ].valid = function( val ) {
@@ -306,6 +314,7 @@ function SingletonFactory(Base, REGEX) {
           m_forEach(self.fields,function (field, key) {
             var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? m_copy(field) : {};
             fieldConfig.key = fieldConfig.key || key;
+            fieldConfig.configKey = key;
             fieldConfig.methodName = fieldConfig.methodName || cap(key);
             self.__fieldConfig.push(fieldConfig);
           });

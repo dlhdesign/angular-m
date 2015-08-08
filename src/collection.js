@@ -96,6 +96,7 @@ function CollectionFactory(Base, Singleton) {
         self.$selectedCount = 0;
         self.$allSelected = false;
         self.$noneSelected = true;
+        self.$busy = false;
       },
       /**
       Triggers `cb` for each current child in the instance.
@@ -256,6 +257,8 @@ function CollectionFactory(Base, Singleton) {
           } else {
             throw new Error('Invalid filter value provided: ' + filter);
           }
+        } else {
+          self.__filter = _filter;
         }
         return self;
       },
@@ -329,6 +332,8 @@ function CollectionFactory(Base, Singleton) {
           self.each(function (item, idx) {
             self.__data[idx] = item.get();
           });
+        } else {
+          self.__sort = sort;
         }
         return self;
       },
