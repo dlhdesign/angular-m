@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.9
+ * @version v0.1.10
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -189,25 +189,25 @@ function HTTPService($rootScope, $http, $q) {
   function callRead(config, success, fail) {
     config = config || {};
     config.method = METHODS.read;
-    return callHTTP(config, success, fail);
+    return this.call(config, success, fail);
   }
 
   function callUpdate(config, success, fail) {
     config = config || {};
     config.method = METHODS.update;
-    return callHTTP(config, success, fail);
+    return this.call(config, success, fail);
   }
 
   function callCreate(config, success, fail) {
     config = config || {};
     config.method = METHODS.create;
-    return callHTTP(config, success, fail);
+    return this.call(config, success, fail);
   }
 
   function callDelete(config, success, fail) {
     config = config || {};
     config.method = METHODS.delete;
-    return callHTTP(config, success, fail);
+    return this.call(config, success, fail);
   }
 
   return {
