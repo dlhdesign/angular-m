@@ -374,7 +374,8 @@ function CollectionFactory(Base, Singleton) {
               if (m_isObject(val) === true) {
                 val = JSON.stringify(val);
               }
-              if (uniques[val.toString()] === undefined) {
+              debugger;
+              if (val !== null && val !== undefined && uniques[val.toString()] === undefined) {
                 uniques[val.toString()] = true;
                 ret.push(val);
               }

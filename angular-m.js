@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.13
+ * @version v0.1.14
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1760,7 +1760,8 @@ function CollectionFactory(Base, Singleton) {
               if (m_isObject(val) === true) {
                 val = JSON.stringify(val);
               }
-              if (uniques[val.toString()] === undefined) {
+              debugger;
+              if (val !== null && val !== undefined && uniques[val.toString()] === undefined) {
                 uniques[val.toString()] = true;
                 ret.push(val);
               }
