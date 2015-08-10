@@ -40,7 +40,7 @@ function CollectionFactory(Base, Singleton) {
       field = field.split('.');
       while (field.length > 0) {
         f = field.shift();
-        if (m_isFunction(obj[f]) === false) {
+        if (m_isFunction(obj[f]) === true) {
           val = obj[f]();
         } else if (m_isObject(val) === false) {
           return undefined;
