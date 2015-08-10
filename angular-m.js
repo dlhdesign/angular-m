@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.10
+ * @version v0.1.11
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1866,7 +1866,7 @@ function CollectionFactory(Base, Singleton) {
           idx = idx || self.unfinalize();
         }
 
-        if (_.m_isFunction(self.readService)) {
+        if (m_isFunction(self.readService)) {
           self.$busy = true;
           self.__lastReadData = data || {};
           ret = self.readService(

@@ -480,7 +480,7 @@ function CollectionFactory(Base, Singleton) {
           idx = idx || self.unfinalize();
         }
 
-        if (_.m_isFunction(self.readService)) {
+        if (m_isFunction(self.readService)) {
           self.$busy = true;
           self.__lastReadData = data || {};
           ret = self.readService(
