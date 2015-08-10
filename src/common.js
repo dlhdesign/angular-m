@@ -87,7 +87,7 @@ function pick(obj) {
 }
 
 function filter(collection, callback) {
-  var array = m_isArray(collection).
+  var array = m_isArray(collection),
       result = array ? [] : {};
   m_forEach(collection, function(val, i) {
     if (callback(val, i)) {

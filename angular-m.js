@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.12
+ * @version v0.1.13
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -100,7 +100,7 @@ function pick(obj) {
 }
 
 function filter(collection, callback) {
-  var array = m_isArray(collection).
+  var array = m_isArray(collection),
       result = array ? [] : {};
   m_forEach(collection, function(val, i) {
     if (callback(val, i)) {
