@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.15
+ * @version v0.1.16
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1699,7 +1699,7 @@ function CollectionFactory(Base, Singleton) {
           } else if (m_isArray(sort) === true && sort.length > 0) {
             self.__origData = self.__origData || m_copy(self.__data);
             len = sort.reverse().length;
-            while (len--) {
+            while (--len) {
               sort[len] = sort[len].exec(reSortExpression);
               if (sort[len].length !== 3) {
                 throw new Error('Invalid sort value provided: ' + sort[len]);
