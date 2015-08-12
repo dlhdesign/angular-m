@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.3.1
+ * @version v0.3.2
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -38,7 +38,7 @@ function merge(dst) {
   m_forEach(arguments, function (obj) {
     if (obj !== dst) {
       m_forEach(obj, function (value, key) {
-        if (!dst.hasOwnProperty(key)) dst[key] = value;
+        dst[key] = value;
       });
     }
   });

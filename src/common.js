@@ -25,7 +25,7 @@ function merge(dst) {
   m_forEach(arguments, function (obj) {
     if (obj !== dst) {
       m_forEach(obj, function (value, key) {
-        if (!dst.hasOwnProperty(key)) dst[key] = value;
+        dst[key] = value;
       });
     }
   });
