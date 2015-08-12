@@ -1,9 +1,9 @@
 {
   "name": "angular-m",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "main": "angular-m.js",
   "dependencies": {
-    "angular": ">= 1.0.8"
+    "angular": ">= 1.3.0"
   },
   "ignore": [
     "**/.*",
