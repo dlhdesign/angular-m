@@ -8,7 +8,7 @@ function input() {
       var model = scope.$eval(attrs.ngModel);
 
       function setValidity() {
-        _.forOwn(model.$errors, function (v, k) {
+        m_forEach(model.$errors, function (v, k) {
           ctrl.$setValidity(k, v);
         });
       }
@@ -19,7 +19,7 @@ function input() {
         return val;
       }
 
-      if (!_.isFunction(model) || !_.isFunction(model.valid)) {
+      if (!m_isFunction(model) || !m_isFunction(model.valid)) {
         return;
       }
 
