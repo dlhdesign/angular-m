@@ -117,7 +117,7 @@ function SingletonFactory(Base, REGEX) {
         setError.call(self, fieldConfig.methodName, 'limit', true );
       } else if ( m_isArray(fieldConfig.limit) || m_isObject(fieldConfig.limit) ) {
         limit = false;
-        m_forEach(fieldConfig.limit, function(lim) {
+        m_forEach(fieldConfig.limit, function (lim) {
           if ( m_isObject( lim ) === true && !m_isNull(lim.value) && !m_isUndefined(lim.value) ) {
             limit = limit && m_equals(lim.value, val);
           } else {
@@ -146,7 +146,7 @@ function SingletonFactory(Base, REGEX) {
       }
     } else if ( m_isArray(fieldConfig.equals) ) {
       equals = true;
-      m_forEach(fieldConfig.equals, function(val) {
+      m_forEach(fieldConfig.equals, function (val) {
         if ( m_isFunction(this[val]) && m_equals(this[val](), val) ) {
           equals = false;
           return false;
@@ -255,7 +255,7 @@ function SingletonFactory(Base, REGEX) {
           @type {function}
           @returns {boolean} `true` if the value is currently valid; else `false`
           */
-          self[ fieldConfig.methodName ] = function(val) {
+          self[ fieldConfig.methodName ] = function (val) {
             if ( arguments.length ) {
               return setter.call(self[ fieldConfig.methodName ], val);
             }
@@ -265,7 +265,7 @@ function SingletonFactory(Base, REGEX) {
           fieldConfig.label = self[fieldConfig.methodName].$label;
           self[ fieldConfig.methodName ].$errors = {};
           self[ fieldConfig.methodName ].$config = fieldConfig;
-          self[ fieldConfig.methodName ].valid = function( val ) {
+          self[ fieldConfig.methodName ].valid = function ( val ) {
             var ret = true;
             if ( arguments.length === 0 ) {
               val = self[ fieldConfig.methodName ]();
@@ -312,7 +312,7 @@ function SingletonFactory(Base, REGEX) {
       Clears any instance and field cache that is currently present.
       @returns {Singleton} `this`
       */
-      clearCache: function() {
+      clearCache: function () {
         var self = this;
         if (self.$$merged !== false) {
           self.$$merged = false;
@@ -338,7 +338,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         if ( m_isObject(self.fields) && self.$$fieldConfig === false ) {
           self.$$fieldConfig = [];
-          m_forEach(self.fields,function (field, key) {
+          m_forEach(self.fields, function (field, key) {
             var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? m_copy(field) : {};
             fieldConfig.key = fieldConfig.key || key;
             fieldConfig.configKey = key;
@@ -354,10 +354,33 @@ function SingletonFactory(Base, REGEX) {
         return self;
       },
       /**
+      Pulls fields out of the mode and returns them as an object. Can pas in a function to use a dynamic pick list.
+      @arg {array|Singleton~pickCB} fields - List of fields to include OR function to call for each field to dynamically determine whether to include it or not
+      @returns {object}
+      */
+      /**
+      Callback for Singleton.pick.
+      @callback Singleton~pickCB
+      @param {FieldConfig} fieldConfig
+      @param {key} fieldConfig.key
+      @this {Singleton} `this`
+      */
+      pick: function (fields) {
+        var self = this,
+            ret = {};
+        if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
+          if (m_isFunction(fields)) {
+            fields = pick(self.$$fieldConfig, fields, self);
+          };
+          ret = pick(self.get(), fields);
+        }
+        return ret;
+      },
+      /**
       Validates each field.
       @returns {Singleton} `this`
       */
-      validate: function() {
+      validate: function () {
         var self = this;
         self.each(function (fieldConfig) {
           self[ fieldConfig.methodName ].valid();
@@ -368,7 +391,7 @@ function SingletonFactory(Base, REGEX) {
       Clears any pending data that may exist.
       @returns {Singleton} `this`
       */
-      cancel: function() {
+      cancel: function () {
         var self = this;
         if (self.$dirty) {
           self.$dirty = false;
@@ -382,7 +405,7 @@ function SingletonFactory(Base, REGEX) {
       @arg {object} [data] - If provided, is used as the finalized data. If not, `this.get()` is used
       @returns {Singleton} `this`
       */
-      finalize: function(data) {
+      finalize: function (data) {
         var self = this;
         if ( data || self.$dirty ) {
           self.$dirty = false;
@@ -396,7 +419,7 @@ function SingletonFactory(Base, REGEX) {
       Clones $$setData and other properties.
       @overrides
       */
-      clone: function() {
+      clone: function () {
         var self = this,
             ret = self._super.apply(self, arguments);
         ret.$$data = m_copy(self.$$data);
@@ -409,7 +432,7 @@ function SingletonFactory(Base, REGEX) {
       Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
-      resolve: function() {
+      resolve: function () {
         var self = this;
         self.$loaded = true;
         delete self.$busy;
@@ -420,7 +443,7 @@ function SingletonFactory(Base, REGEX) {
       Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
-      reject: function() {
+      reject: function () {
         var self = this;
         self.$loaded = true;
         delete self.$busy;
@@ -505,7 +528,7 @@ function SingletonFactory(Base, REGEX) {
       },
       /**
       Service to update (PUT) the data for this instance. Services should return `false` if they are currently invalid.
-      @arg data - Data to be used during the update
+      @arg [data] - Data to be used during the update
       @arg {Singleton~successCallback} Success callback for the service
       @arg {Singleton~failCallback} Failure callback for the service
       @abstract
@@ -514,7 +537,7 @@ function SingletonFactory(Base, REGEX) {
       updateService: false,
       /**
       Uses the updateService (if defined) to attempt to update the data for the instance. Will finalize the instance upon success.
-      @arg [data=this.$$setData] - Data to be provided to the updateService
+      @arg [data] - Data to be provided to the updateService. Defaults to an object contining all the fields who's "updateable" config is not false
       @returns {Singleton} `this`
       */
       update: function (data, idx) {
@@ -535,11 +558,16 @@ function SingletonFactory(Base, REGEX) {
           self.$busy = true;
           if (arguments.length === 0) {
             if (self.$dirty === true) {
-              data = self.$$setData;
-            } else {
-              delete self.$errors.update;
-              return self.resolve(idx);
+              data = self.pick(function (fieldConfig) {
+                if (fieldConfig.updateable !== false) {
+                  return fieldConfig.key;
+                }
+              });
             }
+          }
+          if (objectKeys(data).length === 0) {
+            delete self.$errors.update;
+            return self.resolve(idx);
           }
           ret = self.updateService(
             data,
@@ -559,6 +587,75 @@ function SingletonFactory(Base, REGEX) {
           }
         } else {
           self.$errors.update = true;
+          self.reject(idx);
+        }
+        return self;
+      },
+      /**
+      Service to change (PATCH) the data for this instance. Services should return `false` if they are currently invalid.
+      @arg data - Data to be used during the change
+      @arg {Singleton~successCallback} Success callback for the service
+      @arg {Singleton~failCallback} Failure callback for the service
+      @abstract
+      @returns {boolean}
+      */
+      changeService: false,
+      /**
+      Uses the changeService (if defined) to attempt to change the data for the instance. Will finalize the instance upon success.
+      @arg [data=this.$$setData] - Data to be provided to the changeService. Defaults to an object contining all the fields who's value has changed and who's "updateable" config is not false
+      @returns {Singleton} `this`
+      */
+      change: function (data, idx) {
+        var self = this,
+            fields,
+            ret;
+
+        if (self.$busy === true) {
+          self.always(function() {
+            self.change(data, idx);
+          });
+          idx = self.unfinalize();
+          return self;
+        } else {
+          idx = idx || self.unfinalize();
+        }
+
+        if (m_isFunction(self.changeService)) {
+          self.$busy = true;
+          if (arguments.length === 0) {
+            if (self.$dirty === true) {
+              if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
+                fields = pick(self.$$fieldConfig, function (fieldConfig) {
+                  if (fieldConfig.updateable !== false) {
+                    return fieldConfig.key;
+                  }
+                }, self);
+                data = pick(self.$$setData, fields);
+              }
+            }
+          }
+          if (objectKeys(data).length === 0) {
+            delete self.$errors.change;
+            return self.resolve(idx);
+          }
+          ret = self.changeService(
+            data,
+            function (data) {
+              delete self.$errors.change;
+              self.finalize(data);
+              self.resolve(idx);
+            },
+            function (data) {
+              self.$errors.change = data;
+              self.reject(idx);
+            }
+          );
+          if (ret === false) {
+            self.$errors.change = true;
+            self.reject(idx);
+          }
+        } else {
+          self.$errors.change = true;
           self.reject(idx);
         }
         return self;
@@ -626,7 +723,7 @@ function SingletonFactory(Base, REGEX) {
       createService: false,
       /**
       Uses the createService (if defined) to attempt to create data for the instance. Will finalize the instance.
-      @arg [data=this.get()] - Data to be provided to the createService
+      @arg [data] - Data to be provided to the createService. Defaults to an object contining all the fields who's "createable" config is not false
       @returns {Singleton} `this`
       */
       create: function (data, idx) {
@@ -647,11 +744,16 @@ function SingletonFactory(Base, REGEX) {
           self.$busy = true;
           if (arguments.length === 0) {
             if (self.$dirty === true) {
-              data = self.get();
-            } else {
-              delete self.$errors.create;
-              return self.resolve(idx);
+              data = self.pick(function (fieldConfig) {
+                if (fieldConfig.createable !== false) {
+                  return fieldConfig.key;
+                }
+              });
             }
+          }
+          if (objectKeys(data).length === 0) {
+            delete self.$errors.create;
+            return self.resolve(idx);
           }
           ret = self.createService(
             data,

@@ -3,6 +3,7 @@ function HTTPService($rootScope, $http, $q) {
   var METHODS = {
     read: 'GET',
     update: 'PUT',
+    change: 'PATCH',
     create: 'POST',
     delete: 'DELETE'
   };
@@ -49,6 +50,12 @@ function HTTPService($rootScope, $http, $q) {
     return this.call(config, success, fail);
   }
 
+  function callChange(config, success, fail) {
+    config = config || {};
+    config.method = METHODS.change;
+    return this.call(config, success, fail);
+  }
+
   function callCreate(config, success, fail) {
     config = config || {};
     config.method = METHODS.create;
@@ -68,11 +75,13 @@ function HTTPService($rootScope, $http, $q) {
 
     read: callRead,
     update: callUpdate,
+    change: callChange,
     create: callCreate,
     delete: callDelete,
     
     readList: callRead,
     updateList: callUpdate,
+    changeList: callChange,
     createList: callCreate,
     deleteList: callDelete
   };

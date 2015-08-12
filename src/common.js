@@ -76,15 +76,28 @@ function indexOf(array, value) {
   return -1;
 }
 
-// extracted from underscore.js
-// Return a copy of the object only containing the whitelisted properties.
-function pick(obj) {
-  var c = {},
-      keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
-  m_forEach(keys, function(key) {
-    if (key in obj) c[key] = obj[key];
-  });
-  return c;
+function pick(obj, fields, context) {
+  var ret = {};
+
+  if (m_isString(fields)) {
+    fields = fields.split(',');
+  }
+  if (m_isFunction(fields) || (m_isArray(fields) && fields.length > 0)) {
+    m_forEach(obj, function (value, key) {
+      var include = false;
+      if (m_isFunction(fields)) {
+        include = fields.call(context || obj, value, key);
+      } else if (fields.indexOf(value) > -1) {
+        include = true;
+      }
+      if (include === true) {
+        ret[key] = obj[key];
+      } else if (include !== false) {
+        ret[key] = include;
+      }
+    });
+  }
+  return ret;
 }
 
 function filter(collection, callback) {
