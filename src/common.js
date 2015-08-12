@@ -17,13 +17,13 @@ var m_isFunction = angular.isFunction,
     m_copy = angular.copy;
 
 function inherit(parent, extra) {
-  return m_extend(new (m_extend(function() {}, { prototype: parent }))(), extra);
+  return m_extend(new (m_extend(function () {}, { prototype: parent }))(), extra);
 }
 
 function merge(dst) {
-  m_forEach(arguments, function(obj) {
+  m_forEach(arguments, function (obj) {
     if (obj !== dst) {
-      m_forEach(obj, function(value, key) {
+      m_forEach(obj, function (value, key) {
         if (!dst.hasOwnProperty(key)) dst[key] = value;
       });
     }
@@ -101,7 +101,7 @@ function map(collection, callback) {
   var result = m_isArray(collection) ? [] : {};
 
   m_forEach(collection, function(val, i) {
-    result[i] = callback(val, i);
+    result[i] = callback.call(this, val, i);
   });
   return result;
 }

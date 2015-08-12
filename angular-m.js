@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.1.16
+ * @version v0.2.0
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -30,13 +30,13 @@ var m_isFunction = angular.isFunction,
     m_copy = angular.copy;
 
 function inherit(parent, extra) {
-  return m_extend(new (m_extend(function() {}, { prototype: parent }))(), extra);
+  return m_extend(new (m_extend(function () {}, { prototype: parent }))(), extra);
 }
 
 function merge(dst) {
-  m_forEach(arguments, function(obj) {
+  m_forEach(arguments, function (obj) {
     if (obj !== dst) {
-      m_forEach(obj, function(value, key) {
+      m_forEach(obj, function (value, key) {
         if (!dst.hasOwnProperty(key)) dst[key] = value;
       });
     }
@@ -114,7 +114,7 @@ function map(collection, callback) {
   var result = m_isArray(collection) ? [] : {};
 
   m_forEach(collection, function(val, i) {
-    result[i] = callback(val, i);
+    result[i] = callback.call(this, val, i);
   });
   return result;
 }
@@ -256,18 +256,18 @@ function BaseFactory() {
   function executeQueue(idx, data) {
     var self = this,
         i = 0;
-    for(; i < self.__cbQueue.length; i++) {
-      if (self.__cbQueue[i].idx <= idx) {
+    for(; i < self.$$cbQueue.length; i++) {
+      if (self.$$cbQueue[i].idx <= idx) {
         if (
-          (self.__cbQueue[i].type < 3 && self.__finals[idx] && self.__finals[idx].resolved === true) || // Success (type=1) & Always (type=2)
-          (self.__cbQueue[i].type > 1 && self.__cbQueue[i].type < 4 && self.__finals[idx] && self.__finals[idx].rejected === true) || // Fail (type=3) & Always (type=2)
-          (self.__cbQueue[i].type === 4 && (!self.__finals[idx] || (!self.__finals[idx].resolved && !self.__finals[idx].rejected))) // Progress (type=4)
+          (self.$$cbQueue[i].type < 3 && self.$$finals[idx] && self.$$finals[idx].resolved === true) || // Success (type=1) & Always (type=2)
+          (self.$$cbQueue[i].type > 1 && self.$$cbQueue[i].type < 4 && self.$$finals[idx] && self.$$finals[idx].rejected === true) || // Fail (type=3) & Always (type=2)
+          (self.$$cbQueue[i].type === 4 && (!self.$$finals[idx] || (!self.$$finals[idx].resolved && !self.$$finals[idx].rejected))) // Progress (type=4)
         ) {
-          self.__cbQueue[i].cb.call(self, data);
+          self.$$cbQueue[i].cb.call(self, data);
         }
         // If this thread is resolved or rejected, then remove the cb from the queue to keep executions faster
-        if (self.__finals[idx].resolved || self.__finals[idx].rejected) {
-          self.__cbQueue.splice(i, 1);
+        if (self.$$finals[idx].resolved || self.$$finals[idx].rejected) {
+          self.$$cbQueue.splice(i, 1);
           i--;
         }
       }
@@ -303,13 +303,12 @@ function BaseFactory() {
 	/**
   Base model that all other models will inherit from. Provides Promises/A functionality as well as publish/subscribe functionality.
   @constructs Base
-  @prop {Array}   __arguments   - The initial arguments passed into the constructor
-  @prop {Array}   __cbQueue     - Array of callbacks awaiting finalization
-  @prop {Object}  __listeners   - Object storing event listeners
-  @prop {Boolean} $valid=true   - Whether the instance is currently in a valid state or not
+  @prop {Array}   $$arguments   - The initial arguments passed into the constructor
+  @prop {Array}   $$cbQueue     - Array of callbacks awaiting finalization
+  @prop {Object}  $$listeners   - Object storing event listeners
   @prop {Object}  $errors       - Contains details about any error states on the instance
-  @prop {Boolean} __resolved=undefined    - Whether the instance has been resolved (success) or not
-  @prop {Boolean} __rejected=undefined    - Whether the instance has been rejected (fail) or not
+  @prop {Boolean} $$resolved=undefined    - Whether the instance has been resolved (success) or not
+  @prop {Boolean} $$rejected=undefined    - Whether the instance has been rejected (fail) or not
   */
   function Base() {}
 
@@ -324,13 +323,12 @@ function BaseFactory() {
     init: function ( data, forClone) {
       /*jshint unused:false */
       var self = this;
-      self.__arguments = m_copy(arguments);
-      self.__cbQueue = [];
-      self.__cbQueueIdx = 1;
-      self.__finals = [];
-      self.__listeners = {};
+      self.$$arguments = m_copy(arguments);
+      self.$$cbQueue = [];
+      self.$$cbQueueIdx = 1;
+      self.$$finals = [];
+      self.$$listeners = {};
       self.$errors = {};
-      self.$valid = true;
       return self;
     },
     /**
@@ -341,26 +339,26 @@ function BaseFactory() {
     clone: function () {
       var self = this,
           ret = new self.constructor(null, true);
-      ret.__arguments = m_copy(self.__arguments);
+      ret.$$arguments = m_copy(self.$$arguments);
       self.trigger('cloned', ret);
       return ret;
     },
     /**
     Indicates whether the instance has been finalized (resolved or rejected)
-    @arg {number} [idx=this.__cbQueueIdx] Thread index to check
+    @arg {number} [idx=this.$$cbQueueIdx] Thread index to check
     @return {Boolean}
     */
     isFinal: function (idx) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
-      if (self.__finals[idx]) {
-        return !!(self.__finals[idx].resolved || self.__finals[idx].rejected);
+      idx = idx || self.$$cbQueueIdx;
+      if (self.$$finals[idx]) {
+        return !!(self.$$finals[idx].resolved || self.$$finals[idx].rejected);
       }
       return false;
     },
     /**
     Marks the promie thread as "resolved" (successfully complete).
-    @arg [idx=this.__cbQueueIdx] - Promise thread to resolve
+    @arg [idx=this.$$cbQueueIdx] - Promise thread to resolve
     @arg [data] - Data related to the resolution
     @fires Base#resolved
     @fires Base#finalized
@@ -368,9 +366,9 @@ function BaseFactory() {
     */
     resolve: function (idx, data) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
+      idx = idx || self.$$cbQueueIdx;
       if (!self.isFinal(idx)) {
-        self.__finals[idx] = {
+        self.$$finals[idx] = {
           resolved: true,
           data: data
         };
@@ -382,7 +380,7 @@ function BaseFactory() {
     },
     /**
     Marks the promise thread as "rejected" (unsuccessfully complete).
-    @arg [idx=this.__cbQueueIdx] - Promise thread to reject
+    @arg [idx=this.$$cbQueueIdx] - Promise thread to reject
     @arg [data] - Data related to the rejection
     @fires Base#rejected
     @fires Base#finalized
@@ -390,9 +388,9 @@ function BaseFactory() {
     */
     reject: function (idx, data) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
+      idx = idx || self.$$cbQueueIdx;
       if (!self.isFinal(idx)) {
-        self.__finals[idx] = {
+        self.$$finals[idx] = {
           rejected: true,
           data: data
         };
@@ -404,14 +402,14 @@ function BaseFactory() {
     },
     /**
     Triggers a progress step for the provided promise thread.
-    @arg [idx=this.__cbQueueIdx] - Promise thread to notify of progress
+    @arg [idx=this.$$cbQueueIdx] - Promise thread to notify of progress
     @arg [data] - Data related to the progress step
     @fires Base#notified
     @returns {Base} `this`
     */
     notify: function (idx, data) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
+      idx = idx || self.$$cbQueueIdx;
       if (!self.isFinal(idx)) {
         executeQueue.call(self, idx, data);
         self.trigger('notified', data);
@@ -425,7 +423,7 @@ function BaseFactory() {
     */
     unfinalize: function () {
       this.trigger('unfinalized');
-      return ++this.__cbQueueIdx;
+      return ++this.$$cbQueueIdx;
     },
     /**
     Attaches success/fail/progress callbacks to the current promise thread, which will trigger upon the next resolve/reject call respectively or, if the current promise thread is already final, immediately.
@@ -449,28 +447,28 @@ function BaseFactory() {
     then: function(success, fail, progress) {
       var self = this;
       if (m_isFunction(success)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 1,
           cb: success,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
       if (m_isFunction(fail)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 3,
           cb: fail,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
       if (m_isFunction(progress)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 4,
           cb: progress,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
-      if (self.__finals[self.__cbQueueIdx]) {
-        executeQueue.call(self, self.__cbQueueIdx, self.__finals[self.__cbQueueIdx].data);
+      if (self.$$finals[self.$$cbQueueIdx]) {
+        executeQueue.call(self, self.$$cbQueueIdx, self.$$finals[self.$$cbQueueIdx].data);
       }
       return self;
     },
@@ -486,14 +484,14 @@ function BaseFactory() {
     always: function (always) {
       var self = this;
       if (m_isFunction(always)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 2,
           cb: always,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
-      if (self.__finals[self.__cbQueueIdx]) {
-        executeQueue.call(self, self.__cbQueueIdx, self.__finals[self.__cbQueueIdx].data);
+      if (self.$$finals[self.$$cbQueueIdx]) {
+        executeQueue.call(self, self.$$cbQueueIdx, self.$$finals[self.$$cbQueueIdx].data);
       }
       return self;
     },
@@ -530,8 +528,8 @@ function BaseFactory() {
     bind: function (type, cb) {
       var self = this;
       if (m_isString(type) && m_isFunction(cb)) {
-        self.__listeners[type] = self.__listeners[type] || [];
-        self.__listeners[type].push(cb);
+        self.$$listeners[type] = self.$$listeners[type] || [];
+        self.$$listeners[type].push(cb);
       }
       return self;
     },
@@ -544,13 +542,13 @@ function BaseFactory() {
     unbind: function (type, listener) {
       var self = this,
           idx;
-      if (m_isString(type) && m_isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
+      if (m_isString(type) && m_isArray(self.$$listeners[type]) && self.$$listeners[type].length > 0) {
         if (m_isFunction(listener)) {
-          self.__listeners[type] = filter(self.__listeners[type], function (cb) {
+          self.$$listeners[type] = filter(self.$$listeners[type], function (cb) {
             return cb !== listener;
           });
         } else {
-          delete self.__listeners[type];
+          delete self.$$listeners[type];
         }
       }
       return self;
@@ -582,8 +580,8 @@ function BaseFactory() {
     trigger: function (type, data) {
       var self = this,
           ret = true;
-      if (m_isString(type) && m_isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
-        m_forEach(self.__listeners[type], function (cb) {
+      if (m_isString(type) && m_isArray(self.$$listeners[type]) && self.$$listeners[type].length > 0) {
+        m_forEach(self.$$listeners[type], function (cb) {
           ret = cb.call(self, data, type) && ret;
         });
       }
@@ -677,10 +675,10 @@ function SingletonFactory(Base, REGEX) {
   Base model that represents a single object.
   @class Singleton
   @extends Base
-  @prop {object}  __data        - Current data for the instance
-  @prop {object}  __setData     - Pending data for the instance
-  @prop {object}  __merged      - Cache of __data + __setData
-  @prop {array}   __fieldConfig - Cache of field configurations
+  @prop {object}  $$data        - Current data for the instance
+  @prop {object}  $$setData     - Pending data for the instance
+  @prop {object}  $$merged      - Cache of $$data + $$setData
+  @prop {array}   $$fieldConfig - Cache of field configurations
   @prop {boolean} $dirty=false  - If instance has been modified since initilization or the last save, equals `true`; else `false`
   @prop {boolean} $busy         - If instance is currently in the middle of an API call, equals `true`; else `false`
   @prop {boolean} $loaded       - If instance has been loaded or instantiated with data, equals `true`; else `false`
@@ -698,31 +696,36 @@ function SingletonFactory(Base, REGEX) {
    * Helper functions
    */
   function cap(str) {
-    return str.charAt(0).toLowerCase() + str.slice(1).replace(/_([a-z])/g, function( _, l ){ return l.toUpperCase(); });
+    return str.charAt(0).toLowerCase() + str.slice(1).replace(/_([a-z])/g, function ( v, l ) {
+      return l.toUpperCase();
+    });
   }
   function label(str) {
     return str.charAt(0).toUpperCase() + str.slice(1).replace(/_([a-z])/g, function (v, l) {
       return ' ' + l.toUpperCase();
     });
   }
-  function setError(self, field, key, value) {
-    self.$errors[ field ] = self.$errors[ field ] || {};
-    self.$errors[ field ][ key ] = value;
-    self[ field ].$errors[ key ] = value;
+  function setError(field, key, value) {
+    /*jshint validthis:true */
+    var self = this;
+    self.$errors[field] = self.$errors[field] || {};
+    self.$errors[field][key] = value;
+    self[field].$errors[key] = value;
   }
   function validate(val, fieldConfig) {
     /*jshint validthis:true */
     /*jshint laxbreak:true */
-    var ret = true,
+    var self = this,
+        ret = true,
         matches, limit;
 
     // required
-    if ( fieldConfig.required === true ) {
+    if ( fieldConfig.required === true || ( m_isFunction(fieldConfig.required) === true && fieldConfig.required.call(self, val) === true ) ) {
       if ( val === undefined || val === null || val.length === 0 ) {
-        setError( this, fieldConfig.methodName, 'required', false );
+        setError.call(self, fieldConfig.methodName, 'required', false );
         ret = false;
       } else {
-        setError( this, fieldConfig.methodName, 'required', true );
+        setError.call(self, fieldConfig.methodName, 'required', true );
       }
     }
 
@@ -731,7 +734,7 @@ function SingletonFactory(Base, REGEX) {
 
       // type
       if ( indexOf(['st','nu','ob','ar','bo','dt'], fieldConfig.type ) > -1 ) {
-        setError( this, fieldConfig.methodName, 'type', true );
+        setError.call(self, fieldConfig.methodName, 'type', true );
         if ( ( fieldConfig.type === 'st' && !m_isString(val) )
           || ( fieldConfig.type === 'nu' && !(m_isNumber(val) || REGEX.number.test(val) ) )
           || ( fieldConfig.type === 'ob' && !(m_isObject(val) || REGEX.object.test(val) ) )
@@ -739,7 +742,7 @@ function SingletonFactory(Base, REGEX) {
           || ( fieldConfig.type === 'bo' && !(m_isBoolean(val) || REGEX.boolean.test(val) ) )
           || ( fieldConfig.type === 'dt' && !m_isDate(new Date(val)) )
         ) {
-          setError( this, fieldConfig.methodName, 'type', true );
+          setError.call(self, fieldConfig.methodName, 'type', true );
           ret = false;
         }
       }
@@ -747,25 +750,25 @@ function SingletonFactory(Base, REGEX) {
       // min/max
       if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
-          setError( this, fieldConfig.methodName, 'min', true );
+          setError.call(self, fieldConfig.methodName, 'min', true );
         } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
-          setError( this, fieldConfig.methodName, 'min', true );
+          setError.call(self, fieldConfig.methodName, 'min', true );
         } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(fieldConfig.min) ) {
-          setError( this, fieldConfig.methodName, 'min', true );
+          setError.call(self, fieldConfig.methodName, 'min', true );
         } else {
-          setError( this, fieldConfig.methodName, 'min', false );
+          setError.call(self, fieldConfig.methodName, 'min', false );
           ret = false;
         }
       }
       if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
-          setError( this, fieldConfig.methodName, 'max', true );
+          setError.call(self, fieldConfig.methodName, 'max', true );
         } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
-          setError( this, fieldConfig.methodName, 'max', true );
+          setError.call(self, fieldConfig.methodName, 'max', true );
         } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(fieldConfig.max) ) {
-          setError( this, fieldConfig.methodName, 'max', true );
+          setError.call(self, fieldConfig.methodName, 'max', true );
         } else {
-          setError( this, fieldConfig.methodName, 'max', false );
+          setError.call(self, fieldConfig.methodName, 'max', false );
           ret = false;
         }
       }
@@ -776,31 +779,31 @@ function SingletonFactory(Base, REGEX) {
     // matches
     if ( m_isRegEx(fieldConfig.matches) ) {
       matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
-      setError( this, fieldConfig.methodName, 'matches', matches );
+      setError.call(self, fieldConfig.methodName, 'matches', matches );
       ret = matches && ret;
     }
 
     // limit
     if ( m_isArray(fieldConfig.limit) ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError( this, fieldConfig.methodName, 'limit', false );
+        setError.call(self, fieldConfig.methodName, 'limit', true );
       }
       limit = fieldConfig.limit.indexOf( val ) > -1;
-      setError( this, fieldConfig.methodName, 'limit', limit );
+      setError.call(self, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
     } else if ( m_isObject(fieldConfig.limit) ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError( this, fieldConfig.methodName, 'limit', false );
+        setError.call(self, fieldConfig.methodName, 'limit', true );
       }
       limit = fieldConfig.limit.hasOwnProperty( val );
-      setError( this, fieldConfig.methodName, 'limit', limit );
+      setError.call(self, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
     } else if ( m_isString(fieldConfig.limit) ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError( this, fieldConfig.methodName, 'limit', false );
+        setError.call(self, fieldConfig.methodName, 'limit', true );
       }
       limit = fieldConfig.limit === val;
-      setError( this, fieldConfig.methodName, 'limit', limit );
+      setError.call(self, fieldConfig.methodName, 'limit', limit );
       ret = limit && ret;
     }
 
@@ -818,12 +821,14 @@ function SingletonFactory(Base, REGEX) {
       init: function (data, forClone) {
         /*jshint unused:false */
         var self = this._super.apply(this, arguments);
-        self.__merged = self.__data = data || {};
-        self.__setData = {};
+        self.$$merged = self.$$data = data || {};
+        self.$$setData = {};
         self.$loaded = data ? true : false;
         self.$dirty = false;
         self.$busy = false;
-        self.__fieldConfig = false;
+        self.$valid = true;
+        self.$invalid = false;
+        self.$$fieldConfig = false;
 
         return self.each(function (fieldConfig) {
           if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
@@ -836,8 +841,8 @@ function SingletonFactory(Base, REGEX) {
             var ret,
                 field = fieldConfig.key;
             //console.log('getter: ' + (fieldConfig.key ? fieldConfig.key : key) + ' = ' + self.get()[ fieldConfig.key ? fieldConfig.key : key ] );
-            if ( fieldConfig.__getterCacheSet === true ) {
-              return fieldConfig.__getterCache;
+            if ( fieldConfig.$$getterCacheSet === true ) {
+              return fieldConfig.$$getterCache;
             }
             if ( fieldConfig.getter ) {
               ret = fieldConfig.getter.call(self, fieldConfig);
@@ -857,8 +862,8 @@ function SingletonFactory(Base, REGEX) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
               }
             }
-            fieldConfig.__getterCacheSet = true;
-            fieldConfig.__getterCache = ret;
+            fieldConfig.$$getterCacheSet = true;
+            fieldConfig.$$getterCache = ret;
             return ret;
           }
           function setter(val) {
@@ -868,17 +873,17 @@ function SingletonFactory(Base, REGEX) {
             if ( fieldConfig.readonly === true ) {
               throw new Error(fieldConfig.methodName + ' is read-only.' );
             }
-            self.__merged = false;
+            self.$$merged = false;
             self.$dirty = true;
             self.$loaded = true;
-            fieldConfig.__getterCacheSet = false;
-            delete fieldConfig.__getterCache;
+            fieldConfig.$$getterCacheSet = false;
+            delete fieldConfig.$$getterCache;
             if ( fieldConfig.setter ) {
               fieldConfig.setter.call(self, val, fieldConfig);
               return self;
             }
             field = field.split( '.' );
-            target = self.__setData;
+            target = self.$$setData;
             while ( field.length > 1 ) {
               f = field.shift();
               target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
@@ -924,33 +929,34 @@ function SingletonFactory(Base, REGEX) {
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             self.$valid = ret;
+            self.$invalid = !ret;
             return ret;
           };
         }); 
       },
       /**
-      Method to retrieve all the current and pending data (__data extended by __setData) for the instance.
+      Method to retrieve all the current and pending data ($$data extended by $$setData) for the instance.
       @returns {object}
       */
       get: function () {
         var self = this;
         // Use a static variable as a cache
-        if (self.__merged !== false) {
-          return self.__merged;
+        if (self.$$merged !== false) {
+          return self.$$merged;
         }
-        self.__merged = merge({}, self.__data, self.__setData);
-        return self.__merged;
+        self.$$merged = merge({}, self.$$data, self.$$setData);
+        return self.$$merged;
       },
       /**
-      Method to set the pending data (__setData) for the instance. Also sets `this.$loaded = true`.
+      Method to set the pending data ($$setData) for the instance. Also sets `this.$loaded = true`.
       @arg {object} val - The pending data to set on the instance
       @returns {Singleton} `this`
       */
       set: function (val) {
         var self = this;
-        self.__merged = false;
+        self.$$merged = false;
         self.$dirty = true;
-        self.__setData = m_copy(val);
+        self.$$setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
         self.clearCache();
         return self;
@@ -961,11 +967,11 @@ function SingletonFactory(Base, REGEX) {
       */
       clearCache: function() {
         var self = this;
-        if (self.__merged !== false) {
-          self.__merged = false;
+        if (self.$$merged !== false) {
+          self.$$merged = false;
           self.each(function (fieldConfig) {
-            fieldConfig.__getterCacheSet = false;
-            delete fieldConfig.__getterCache;
+            fieldConfig.$$getterCacheSet = false;
+            delete fieldConfig.$$getterCache;
           });
         }
         return self;
@@ -983,18 +989,18 @@ function SingletonFactory(Base, REGEX) {
       */
       each: function (cb) {
         var self = this;
-        if ( m_isObject(self.fields) && self.__fieldConfig === false ) {
-          self.__fieldConfig = [];
+        if ( m_isObject(self.fields) && self.$$fieldConfig === false ) {
+          self.$$fieldConfig = [];
           m_forEach(self.fields,function (field, key) {
             var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? m_copy(field) : {};
             fieldConfig.key = fieldConfig.key || key;
             fieldConfig.configKey = key;
             fieldConfig.methodName = fieldConfig.methodName || cap(key);
-            self.__fieldConfig.push(fieldConfig);
+            self.$$fieldConfig.push(fieldConfig);
           });
         }
-        if ( m_isArray(self.__fieldConfig) === true && self.__fieldConfig.length > 0 ) {
-          m_forEach(self.__fieldConfig, function (fieldConfig) {
+        if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
+          m_forEach(self.$$fieldConfig, function (fieldConfig) {
             cb.call(self, fieldConfig);
           });
         }
@@ -1020,7 +1026,7 @@ function SingletonFactory(Base, REGEX) {
         if (self.$dirty) {
           self.$dirty = false;
           self.clearCache();
-          self.__setData = {};
+          self.$$setData = {};
         }
         return self;
       },
@@ -1033,21 +1039,21 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         if ( data || self.$dirty ) {
           self.$dirty = false;
-          self.__data = data || self.get();
-          self.__setData = {};
+          self.$$data = data || self.get();
+          self.$$setData = {};
           self.trigger('finalize', data);
         }
         return self;
       },
       /**
-      Clones __setData and other properties.
+      Clones $$setData and other properties.
       @overrides
       */
       clone: function() {
         var self = this,
             ret = self._super.apply(self, arguments);
-        ret.__data = m_copy(self.__data);
-        ret.set(self.__setData);
+        ret.$$data = m_copy(self.$$data);
+        ret.set(self.$$setData);
         ret.$loaded = self.$loaded;
         ret.$parent = self.$parent;
         return ret;
@@ -1081,8 +1087,8 @@ function SingletonFactory(Base, REGEX) {
       */
       refresh: function () {
         var self = this;
-        if (self.__lastReadData) {
-          return self.read(self.__lastReadData);
+        if (self.$$lastReadData) {
+          return self.read(self.$$lastReadData);
         }
         return self.read();
       },
@@ -1127,7 +1133,7 @@ function SingletonFactory(Base, REGEX) {
 
         if (m_isFunction(self.readService)) {
           self.$busy = true;
-          self.__lastReadData = data || {};
+          self.$$lastReadData = data || {};
           ret = self.readService(
             data,
             function (data) {
@@ -1161,7 +1167,7 @@ function SingletonFactory(Base, REGEX) {
       updateService: false,
       /**
       Uses the updateService (if defined) to attempt to update the data for the instance. Will finalize the instance upon success.
-      @arg [data=this.__setData] - Data to be provided to the updateService
+      @arg [data=this.$$setData] - Data to be provided to the updateService
       @returns {Singleton} `this`
       */
       update: function (data, idx) {
@@ -1182,7 +1188,7 @@ function SingletonFactory(Base, REGEX) {
           self.$busy = true;
           if (arguments.length === 0) {
             if (self.$dirty === true) {
-              data = self.__setData;
+              data = self.$$setData;
             } else {
               delete self.$errors.update;
               return self.resolve(idx);
@@ -1389,10 +1395,10 @@ function CollectionFactory(Base, Singleton) {
   Base model that represents multiple objects.
   @class Collection
   @extends Base
-  @prop {array}   __data         - Current raw data for the instance
-  @prop {array}   __addData      - Pending data to add to the instance
-  @prop {array}   __modeled      - Cache of __data that has been converted to be the child model
-  @prop {array}   __origData     - Pre-filter/sort data (used to return to unsorted/filtered state)
+  @prop {array}   $$data         - Current raw data for the instance
+  @prop {array}   $$addData      - Pending data to add to the instance
+  @prop {array}   $$modeled      - Cache of $$data that has been converted to be the child model
+  @prop {array}   $$origData     - Pre-filter/sort data (used to return to unsorted/filtered state)
   @prop {number}  length         - Number of known items in the instance
   @prop {boolean} $busy          - If instance is currently in the middle of an API call, equals `true`; else `false`
   @prop {boolean} $loaded        - If instance has been loaded or instantiated with data, equals `true`; else `false`
@@ -1473,11 +1479,11 @@ function CollectionFactory(Base, Singleton) {
         /*jshint unused:false */
         var self = this._super.apply(this, arguments);
 
-        self.__data = data || [];
-        self.__addData = [];
-        self.length = self.__data.length;
+        self.$$data = data || [];
+        self.$$addData = [];
+        self.length = self.$$data.length;
         self.$loaded = self.length > 0;
-        self.__origData = null;
+        self.$$origData = null;
         self.$selected = [];
         self.$selectedCount = 0;
         self.$allSelected = false;
@@ -1487,17 +1493,16 @@ function CollectionFactory(Base, Singleton) {
       /**
       Triggers `cb` for each current child in the instance.
       @arg {Collection~eachCB} cb - Method to call for each child
-      @arg data - Additional data to provide to the callback
       @returns {Collection} `this`
       */
       /**
       Callback for Collection.each.
       @callback Collection~eachCB
-      @param {number} index - Index position of the child in the current data for the instance.
-      @param data - Additional daa provided to the `each` method
-      @this ChildModel
+      @param data - The child object
+      @param {number} index - Index position of the child in the current data for the instance
+      @this {Singleton} `this`
       */
-      each: function (cb, data) {
+      each: function (cb) {
         var self = this;
         if (m_isFunction(cb) === true) {
           m_forEach(self.get(), cb);
@@ -1505,16 +1510,34 @@ function CollectionFactory(Base, Singleton) {
         return self;
       },
       /**
+      Triggers `cb` for each current child in the instance and returns the resulting array.
+      @arg {Collection~mapCB} cb - Method to call for each child
+      @returns {Array} Result of the map opperation
+      */
+      /**
+      Callback for Collection.map.
+      @callback Collection~mapCB
+      @param data - The child object
+      @param {number} index - Index position of the child in the current data for the instance.
+      @this {Singleton} `this`
+      */
+      map: function (cb) {
+        if (m_isFunction(cb) === true) {
+          return map(this.get(), cb);
+        }
+        return [];
+      },
+      /**
       Method to retrieve all the current data for the instance.
       @returns {ChildModel[]}
       */
       get: function () {
         var self = this;
-        if ( self.__modeled ) {
-          return self.__modeled;
+        if ( self.$$modeled ) {
+          return self.$$modeled;
         }
-        self.__modeled = new Array(self.length);
-        m_forEach(self.__data, function (obj, i) {
+        self.$$modeled = new Array(self.length);
+        m_forEach(self.$$data, function (obj, i) {
           var ret = new self.childModel(obj);
           ret.$parent = self;
           ret.select = function (value, forBulk) {
@@ -1527,9 +1550,9 @@ function CollectionFactory(Base, Singleton) {
             }
             return this;
           };
-          self.__modeled[i] = ret;
+          self.$$modeled[i] = ret;
         });
-        return self.__modeled;
+        return self.$$modeled;
       },
       /**
       Method to set the data for the instance. Also sets `this.$loaded = true`. Will re-apply any sorting/filtering after setting the data.
@@ -1538,15 +1561,15 @@ function CollectionFactory(Base, Singleton) {
       */
       set: function (val) {
         var self = this.end(true);
-        self.__data = val;
-        self.length = self.__data.length;
+        self.$$data = val;
+        self.length = self.$$data.length;
         self.$loaded = self.$loaded || self.length > 0;
-        self.__modeled = null;
-        if (self.__filter) {
-          self.filter(self.__filter);
+        self.$$modeled = null;
+        if (self.$$filter) {
+          self.filter(self.$$filter);
         }
-        if (self.__sort) {
-          self.sort(self.__sort);
+        if (self.$$sort) {
+          self.sort(self.$$sort);
         }
         return self;
       },
@@ -1594,7 +1617,7 @@ function CollectionFactory(Base, Singleton) {
             ret[i] = obj;
           }
         });
-        self.__addData = ret;
+        self.$$addData = ret;
         if (obj instanceof Collection || m_isArray(obj) === true) {
           return ret;
         } else {
@@ -1604,19 +1627,19 @@ function CollectionFactory(Base, Singleton) {
       filter: function (_filter) {
         var self = this,
             newData = [];
-        if (self.__data.length > 0) {
+        if (self.$$data.length > 0) {
           if (m_isFunction(_filter) === true) {
-            self.__filter = _filter;
+            self.$$filter = _filter;
             self.select(false);
-            self.__origData = self.__origData || m_copy(self.__data);
-            self.__data = filter(self.get(), _filter);
-            self.length = self.__data.length;
-            self.__modeled = null;
+            self.$$origData = self.$$origData || m_copy(self.$$data);
+            self.$$data = filter(self.get(), _filter);
+            self.length = self.$$data.length;
+            self.$$modeled = null;
           } else if (m_isObject(_filter) === true) {
             if (keys(_filter).length > 0) {
-              self.__filter = _filter;
+              self.$$filter = _filter;
               self.select(false);
-              self.__origData = self.__origData || m_copy(self.__data);
+              self.$$origData = self.$$origData || m_copy(self.$$data);
               filter(self.get(), function (val) {
                 var ret = true;
                 pick(_filter, function (v, k) {
@@ -1635,16 +1658,16 @@ function CollectionFactory(Base, Singleton) {
                   newData.push(val.get());
                 }
               });
-              self.__data = newData;
-              self.length = self.__data.length;
-              self.__modeled = null;
+              self.$$data = newData;
+              self.length = self.$$data.length;
+              self.$$modeled = null;
               evalSelected.call(self);
             }
           } else {
             throw new Error('Invalid filter value provided: ' + filter);
           }
         } else {
-          self.__filter = _filter;
+          self.$$filter = _filter;
         }
         return self;
       },
@@ -1693,11 +1716,11 @@ function CollectionFactory(Base, Singleton) {
             sort = sort.split();
           }
           if (m_isFunction(sort) === true) {
-            self.__sort = sort;
-            self.__origData = self.__origData || m_copy(self.__data);
-            self.__modeled = self.get().sort(sort);
+            self.$$sort = sort;
+            self.$$origData = self.$$origData || m_copy(self.$$data);
+            self.$$modeled = self.get().sort(sort);
           } else if (m_isArray(sort) === true && sort.length > 0) {
-            self.__origData = self.__origData || m_copy(self.__data);
+            self.$$origData = self.$$origData || m_copy(self.$$data);
             len = sort.reverse().length;
             while (--len) {
               sort[len] = sort[len].exec(reSortExpression);
@@ -1710,31 +1733,31 @@ function CollectionFactory(Base, Singleton) {
                 sf = baseF(sort[len][2], (sort[len][1] === '-' ? true : false));
               }
             }
-            self.__modeled = self.get().sort(sf);
+            self.$$modeled = self.get().sort(sf);
           } else {
             throw new Error('Invalid sort value provided: ' + sort);
           }
-          self.__data = new Array(self.length);
+          self.$$data = new Array(self.length);
           self.each(function (item, idx) {
-            self.__data[idx] = item.get();
+            self.$$data[idx] = item.get();
           });
         } else {
-          self.__sort = sort;
+          self.$$sort = sort;
         }
         return self;
       },
       end: function (keepHistory) {
         var self = this;
-        if (self.__origData !== null) {
+        if (self.$$origData !== null) {
           self.select(false);
-          self.__data = m_copy(self.__origData);
-          self.__addData = [];
-          self.__modeled = null;
-          self.length = self.__data.length;
-          self.__origData = null;
+          self.$$data = m_copy(self.$$origData);
+          self.$$addData = [];
+          self.$$modeled = null;
+          self.length = self.$$data.length;
+          self.$$origData = null;
           if (keepHistory !== true) {
-            delete self.__sort;
-            delete self.__filter;
+            delete self.$$sort;
+            delete self.$$filter;
           }
         }
         return self;
@@ -1793,9 +1816,9 @@ function CollectionFactory(Base, Singleton) {
       clone: function () {
         var self = this,
             ret = self._super.apply(self, arguments);
-        ret.__data = m_copy(self.__data);
-        ret.__addData = m_copy(self.__addData);
-        ret.__origData = m_copy(self.__origData);
+        ret.$$data = m_copy(self.$$data);
+        ret.$$addData = m_copy(self.$$addData);
+        ret.$$origData = m_copy(self.$$origData);
         ret.length = self.length;
         ret.$loaded = ret.$loaded;
         ret.$selected = self.$selected;
@@ -1823,8 +1846,8 @@ function CollectionFactory(Base, Singleton) {
       */
       refresh: function () {
         var self = this;
-        if (self.__lastReadData) {
-          return self.read(self.__lastReadData);
+        if (self.$$lastReadData) {
+          return self.read(self.$$lastReadData);
         }
         return self.read();
       },
@@ -1869,7 +1892,7 @@ function CollectionFactory(Base, Singleton) {
 
         if (m_isFunction(self.readService)) {
           self.$busy = true;
-          self.__lastReadData = data || {};
+          self.$$lastReadData = data || {};
           ret = self.readService(
             data,
             function (data) {

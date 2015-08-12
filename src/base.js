@@ -7,18 +7,18 @@ function BaseFactory() {
   function executeQueue(idx, data) {
     var self = this,
         i = 0;
-    for(; i < self.__cbQueue.length; i++) {
-      if (self.__cbQueue[i].idx <= idx) {
+    for(; i < self.$$cbQueue.length; i++) {
+      if (self.$$cbQueue[i].idx <= idx) {
         if (
-          (self.__cbQueue[i].type < 3 && self.__finals[idx] && self.__finals[idx].resolved === true) || // Success (type=1) & Always (type=2)
-          (self.__cbQueue[i].type > 1 && self.__cbQueue[i].type < 4 && self.__finals[idx] && self.__finals[idx].rejected === true) || // Fail (type=3) & Always (type=2)
-          (self.__cbQueue[i].type === 4 && (!self.__finals[idx] || (!self.__finals[idx].resolved && !self.__finals[idx].rejected))) // Progress (type=4)
+          (self.$$cbQueue[i].type < 3 && self.$$finals[idx] && self.$$finals[idx].resolved === true) || // Success (type=1) & Always (type=2)
+          (self.$$cbQueue[i].type > 1 && self.$$cbQueue[i].type < 4 && self.$$finals[idx] && self.$$finals[idx].rejected === true) || // Fail (type=3) & Always (type=2)
+          (self.$$cbQueue[i].type === 4 && (!self.$$finals[idx] || (!self.$$finals[idx].resolved && !self.$$finals[idx].rejected))) // Progress (type=4)
         ) {
-          self.__cbQueue[i].cb.call(self, data);
+          self.$$cbQueue[i].cb.call(self, data);
         }
         // If this thread is resolved or rejected, then remove the cb from the queue to keep executions faster
-        if (self.__finals[idx].resolved || self.__finals[idx].rejected) {
-          self.__cbQueue.splice(i, 1);
+        if (self.$$finals[idx].resolved || self.$$finals[idx].rejected) {
+          self.$$cbQueue.splice(i, 1);
           i--;
         }
       }
@@ -54,13 +54,12 @@ function BaseFactory() {
 	/**
   Base model that all other models will inherit from. Provides Promises/A functionality as well as publish/subscribe functionality.
   @constructs Base
-  @prop {Array}   __arguments   - The initial arguments passed into the constructor
-  @prop {Array}   __cbQueue     - Array of callbacks awaiting finalization
-  @prop {Object}  __listeners   - Object storing event listeners
-  @prop {Boolean} $valid=true   - Whether the instance is currently in a valid state or not
+  @prop {Array}   $$arguments   - The initial arguments passed into the constructor
+  @prop {Array}   $$cbQueue     - Array of callbacks awaiting finalization
+  @prop {Object}  $$listeners   - Object storing event listeners
   @prop {Object}  $errors       - Contains details about any error states on the instance
-  @prop {Boolean} __resolved=undefined    - Whether the instance has been resolved (success) or not
-  @prop {Boolean} __rejected=undefined    - Whether the instance has been rejected (fail) or not
+  @prop {Boolean} $$resolved=undefined    - Whether the instance has been resolved (success) or not
+  @prop {Boolean} $$rejected=undefined    - Whether the instance has been rejected (fail) or not
   */
   function Base() {}
 
@@ -75,13 +74,12 @@ function BaseFactory() {
     init: function ( data, forClone) {
       /*jshint unused:false */
       var self = this;
-      self.__arguments = m_copy(arguments);
-      self.__cbQueue = [];
-      self.__cbQueueIdx = 1;
-      self.__finals = [];
-      self.__listeners = {};
+      self.$$arguments = m_copy(arguments);
+      self.$$cbQueue = [];
+      self.$$cbQueueIdx = 1;
+      self.$$finals = [];
+      self.$$listeners = {};
       self.$errors = {};
-      self.$valid = true;
       return self;
     },
     /**
@@ -92,26 +90,26 @@ function BaseFactory() {
     clone: function () {
       var self = this,
           ret = new self.constructor(null, true);
-      ret.__arguments = m_copy(self.__arguments);
+      ret.$$arguments = m_copy(self.$$arguments);
       self.trigger('cloned', ret);
       return ret;
     },
     /**
     Indicates whether the instance has been finalized (resolved or rejected)
-    @arg {number} [idx=this.__cbQueueIdx] Thread index to check
+    @arg {number} [idx=this.$$cbQueueIdx] Thread index to check
     @return {Boolean}
     */
     isFinal: function (idx) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
-      if (self.__finals[idx]) {
-        return !!(self.__finals[idx].resolved || self.__finals[idx].rejected);
+      idx = idx || self.$$cbQueueIdx;
+      if (self.$$finals[idx]) {
+        return !!(self.$$finals[idx].resolved || self.$$finals[idx].rejected);
       }
       return false;
     },
     /**
     Marks the promie thread as "resolved" (successfully complete).
-    @arg [idx=this.__cbQueueIdx] - Promise thread to resolve
+    @arg [idx=this.$$cbQueueIdx] - Promise thread to resolve
     @arg [data] - Data related to the resolution
     @fires Base#resolved
     @fires Base#finalized
@@ -119,9 +117,9 @@ function BaseFactory() {
     */
     resolve: function (idx, data) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
+      idx = idx || self.$$cbQueueIdx;
       if (!self.isFinal(idx)) {
-        self.__finals[idx] = {
+        self.$$finals[idx] = {
           resolved: true,
           data: data
         };
@@ -133,7 +131,7 @@ function BaseFactory() {
     },
     /**
     Marks the promise thread as "rejected" (unsuccessfully complete).
-    @arg [idx=this.__cbQueueIdx] - Promise thread to reject
+    @arg [idx=this.$$cbQueueIdx] - Promise thread to reject
     @arg [data] - Data related to the rejection
     @fires Base#rejected
     @fires Base#finalized
@@ -141,9 +139,9 @@ function BaseFactory() {
     */
     reject: function (idx, data) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
+      idx = idx || self.$$cbQueueIdx;
       if (!self.isFinal(idx)) {
-        self.__finals[idx] = {
+        self.$$finals[idx] = {
           rejected: true,
           data: data
         };
@@ -155,14 +153,14 @@ function BaseFactory() {
     },
     /**
     Triggers a progress step for the provided promise thread.
-    @arg [idx=this.__cbQueueIdx] - Promise thread to notify of progress
+    @arg [idx=this.$$cbQueueIdx] - Promise thread to notify of progress
     @arg [data] - Data related to the progress step
     @fires Base#notified
     @returns {Base} `this`
     */
     notify: function (idx, data) {
       var self = this;
-      idx = idx || self.__cbQueueIdx;
+      idx = idx || self.$$cbQueueIdx;
       if (!self.isFinal(idx)) {
         executeQueue.call(self, idx, data);
         self.trigger('notified', data);
@@ -176,7 +174,7 @@ function BaseFactory() {
     */
     unfinalize: function () {
       this.trigger('unfinalized');
-      return ++this.__cbQueueIdx;
+      return ++this.$$cbQueueIdx;
     },
     /**
     Attaches success/fail/progress callbacks to the current promise thread, which will trigger upon the next resolve/reject call respectively or, if the current promise thread is already final, immediately.
@@ -200,28 +198,28 @@ function BaseFactory() {
     then: function(success, fail, progress) {
       var self = this;
       if (m_isFunction(success)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 1,
           cb: success,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
       if (m_isFunction(fail)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 3,
           cb: fail,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
       if (m_isFunction(progress)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 4,
           cb: progress,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
-      if (self.__finals[self.__cbQueueIdx]) {
-        executeQueue.call(self, self.__cbQueueIdx, self.__finals[self.__cbQueueIdx].data);
+      if (self.$$finals[self.$$cbQueueIdx]) {
+        executeQueue.call(self, self.$$cbQueueIdx, self.$$finals[self.$$cbQueueIdx].data);
       }
       return self;
     },
@@ -237,14 +235,14 @@ function BaseFactory() {
     always: function (always) {
       var self = this;
       if (m_isFunction(always)) {
-        self.__cbQueue.push({
+        self.$$cbQueue.push({
           type: 2,
           cb: always,
-          idx: self.__cbQueueIdx
+          idx: self.$$cbQueueIdx
         });
       }
-      if (self.__finals[self.__cbQueueIdx]) {
-        executeQueue.call(self, self.__cbQueueIdx, self.__finals[self.__cbQueueIdx].data);
+      if (self.$$finals[self.$$cbQueueIdx]) {
+        executeQueue.call(self, self.$$cbQueueIdx, self.$$finals[self.$$cbQueueIdx].data);
       }
       return self;
     },
@@ -281,8 +279,8 @@ function BaseFactory() {
     bind: function (type, cb) {
       var self = this;
       if (m_isString(type) && m_isFunction(cb)) {
-        self.__listeners[type] = self.__listeners[type] || [];
-        self.__listeners[type].push(cb);
+        self.$$listeners[type] = self.$$listeners[type] || [];
+        self.$$listeners[type].push(cb);
       }
       return self;
     },
@@ -295,13 +293,13 @@ function BaseFactory() {
     unbind: function (type, listener) {
       var self = this,
           idx;
-      if (m_isString(type) && m_isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
+      if (m_isString(type) && m_isArray(self.$$listeners[type]) && self.$$listeners[type].length > 0) {
         if (m_isFunction(listener)) {
-          self.__listeners[type] = filter(self.__listeners[type], function (cb) {
+          self.$$listeners[type] = filter(self.$$listeners[type], function (cb) {
             return cb !== listener;
           });
         } else {
-          delete self.__listeners[type];
+          delete self.$$listeners[type];
         }
       }
       return self;
@@ -333,8 +331,8 @@ function BaseFactory() {
     trigger: function (type, data) {
       var self = this,
           ret = true;
-      if (m_isString(type) && m_isArray(self.__listeners[type]) && self.__listeners[type].length > 0) {
-        m_forEach(self.__listeners[type], function (cb) {
+      if (m_isString(type) && m_isArray(self.$$listeners[type]) && self.$$listeners[type].length > 0) {
+        m_forEach(self.$$listeners[type], function (cb) {
           ret = cb.call(self, data, type) && ret;
         });
       }

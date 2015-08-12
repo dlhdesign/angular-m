@@ -3,10 +3,10 @@ function CollectionFactory(Base, Singleton) {
   Base model that represents multiple objects.
   @class Collection
   @extends Base
-  @prop {array}   __data         - Current raw data for the instance
-  @prop {array}   __addData      - Pending data to add to the instance
-  @prop {array}   __modeled      - Cache of __data that has been converted to be the child model
-  @prop {array}   __origData     - Pre-filter/sort data (used to return to unsorted/filtered state)
+  @prop {array}   $$data         - Current raw data for the instance
+  @prop {array}   $$addData      - Pending data to add to the instance
+  @prop {array}   $$modeled      - Cache of $$data that has been converted to be the child model
+  @prop {array}   $$origData     - Pre-filter/sort data (used to return to unsorted/filtered state)
   @prop {number}  length         - Number of known items in the instance
   @prop {boolean} $busy          - If instance is currently in the middle of an API call, equals `true`; else `false`
   @prop {boolean} $loaded        - If instance has been loaded or instantiated with data, equals `true`; else `false`
@@ -87,11 +87,11 @@ function CollectionFactory(Base, Singleton) {
         /*jshint unused:false */
         var self = this._super.apply(this, arguments);
 
-        self.__data = data || [];
-        self.__addData = [];
-        self.length = self.__data.length;
+        self.$$data = data || [];
+        self.$$addData = [];
+        self.length = self.$$data.length;
         self.$loaded = self.length > 0;
-        self.__origData = null;
+        self.$$origData = null;
         self.$selected = [];
         self.$selectedCount = 0;
         self.$allSelected = false;
@@ -101,17 +101,16 @@ function CollectionFactory(Base, Singleton) {
       /**
       Triggers `cb` for each current child in the instance.
       @arg {Collection~eachCB} cb - Method to call for each child
-      @arg data - Additional data to provide to the callback
       @returns {Collection} `this`
       */
       /**
       Callback for Collection.each.
       @callback Collection~eachCB
-      @param {number} index - Index position of the child in the current data for the instance.
-      @param data - Additional daa provided to the `each` method
-      @this ChildModel
+      @param data - The child object
+      @param {number} index - Index position of the child in the current data for the instance
+      @this {Singleton} `this`
       */
-      each: function (cb, data) {
+      each: function (cb) {
         var self = this;
         if (m_isFunction(cb) === true) {
           m_forEach(self.get(), cb);
@@ -119,16 +118,34 @@ function CollectionFactory(Base, Singleton) {
         return self;
       },
       /**
+      Triggers `cb` for each current child in the instance and returns the resulting array.
+      @arg {Collection~mapCB} cb - Method to call for each child
+      @returns {Array} Result of the map opperation
+      */
+      /**
+      Callback for Collection.map.
+      @callback Collection~mapCB
+      @param data - The child object
+      @param {number} index - Index position of the child in the current data for the instance.
+      @this {Singleton} `this`
+      */
+      map: function (cb) {
+        if (m_isFunction(cb) === true) {
+          return map(this.get(), cb);
+        }
+        return [];
+      },
+      /**
       Method to retrieve all the current data for the instance.
       @returns {ChildModel[]}
       */
       get: function () {
         var self = this;
-        if ( self.__modeled ) {
-          return self.__modeled;
+        if ( self.$$modeled ) {
+          return self.$$modeled;
         }
-        self.__modeled = new Array(self.length);
-        m_forEach(self.__data, function (obj, i) {
+        self.$$modeled = new Array(self.length);
+        m_forEach(self.$$data, function (obj, i) {
           var ret = new self.childModel(obj);
           ret.$parent = self;
           ret.select = function (value, forBulk) {
@@ -141,9 +158,9 @@ function CollectionFactory(Base, Singleton) {
             }
             return this;
           };
-          self.__modeled[i] = ret;
+          self.$$modeled[i] = ret;
         });
-        return self.__modeled;
+        return self.$$modeled;
       },
       /**
       Method to set the data for the instance. Also sets `this.$loaded = true`. Will re-apply any sorting/filtering after setting the data.
@@ -152,15 +169,15 @@ function CollectionFactory(Base, Singleton) {
       */
       set: function (val) {
         var self = this.end(true);
-        self.__data = val;
-        self.length = self.__data.length;
+        self.$$data = val;
+        self.length = self.$$data.length;
         self.$loaded = self.$loaded || self.length > 0;
-        self.__modeled = null;
-        if (self.__filter) {
-          self.filter(self.__filter);
+        self.$$modeled = null;
+        if (self.$$filter) {
+          self.filter(self.$$filter);
         }
-        if (self.__sort) {
-          self.sort(self.__sort);
+        if (self.$$sort) {
+          self.sort(self.$$sort);
         }
         return self;
       },
@@ -208,7 +225,7 @@ function CollectionFactory(Base, Singleton) {
             ret[i] = obj;
           }
         });
-        self.__addData = ret;
+        self.$$addData = ret;
         if (obj instanceof Collection || m_isArray(obj) === true) {
           return ret;
         } else {
@@ -218,19 +235,19 @@ function CollectionFactory(Base, Singleton) {
       filter: function (_filter) {
         var self = this,
             newData = [];
-        if (self.__data.length > 0) {
+        if (self.$$data.length > 0) {
           if (m_isFunction(_filter) === true) {
-            self.__filter = _filter;
+            self.$$filter = _filter;
             self.select(false);
-            self.__origData = self.__origData || m_copy(self.__data);
-            self.__data = filter(self.get(), _filter);
-            self.length = self.__data.length;
-            self.__modeled = null;
+            self.$$origData = self.$$origData || m_copy(self.$$data);
+            self.$$data = filter(self.get(), _filter);
+            self.length = self.$$data.length;
+            self.$$modeled = null;
           } else if (m_isObject(_filter) === true) {
             if (keys(_filter).length > 0) {
-              self.__filter = _filter;
+              self.$$filter = _filter;
               self.select(false);
-              self.__origData = self.__origData || m_copy(self.__data);
+              self.$$origData = self.$$origData || m_copy(self.$$data);
               filter(self.get(), function (val) {
                 var ret = true;
                 pick(_filter, function (v, k) {
@@ -249,16 +266,16 @@ function CollectionFactory(Base, Singleton) {
                   newData.push(val.get());
                 }
               });
-              self.__data = newData;
-              self.length = self.__data.length;
-              self.__modeled = null;
+              self.$$data = newData;
+              self.length = self.$$data.length;
+              self.$$modeled = null;
               evalSelected.call(self);
             }
           } else {
             throw new Error('Invalid filter value provided: ' + filter);
           }
         } else {
-          self.__filter = _filter;
+          self.$$filter = _filter;
         }
         return self;
       },
@@ -307,11 +324,11 @@ function CollectionFactory(Base, Singleton) {
             sort = sort.split();
           }
           if (m_isFunction(sort) === true) {
-            self.__sort = sort;
-            self.__origData = self.__origData || m_copy(self.__data);
-            self.__modeled = self.get().sort(sort);
+            self.$$sort = sort;
+            self.$$origData = self.$$origData || m_copy(self.$$data);
+            self.$$modeled = self.get().sort(sort);
           } else if (m_isArray(sort) === true && sort.length > 0) {
-            self.__origData = self.__origData || m_copy(self.__data);
+            self.$$origData = self.$$origData || m_copy(self.$$data);
             len = sort.reverse().length;
             while (--len) {
               sort[len] = sort[len].exec(reSortExpression);
@@ -324,31 +341,31 @@ function CollectionFactory(Base, Singleton) {
                 sf = baseF(sort[len][2], (sort[len][1] === '-' ? true : false));
               }
             }
-            self.__modeled = self.get().sort(sf);
+            self.$$modeled = self.get().sort(sf);
           } else {
             throw new Error('Invalid sort value provided: ' + sort);
           }
-          self.__data = new Array(self.length);
+          self.$$data = new Array(self.length);
           self.each(function (item, idx) {
-            self.__data[idx] = item.get();
+            self.$$data[idx] = item.get();
           });
         } else {
-          self.__sort = sort;
+          self.$$sort = sort;
         }
         return self;
       },
       end: function (keepHistory) {
         var self = this;
-        if (self.__origData !== null) {
+        if (self.$$origData !== null) {
           self.select(false);
-          self.__data = m_copy(self.__origData);
-          self.__addData = [];
-          self.__modeled = null;
-          self.length = self.__data.length;
-          self.__origData = null;
+          self.$$data = m_copy(self.$$origData);
+          self.$$addData = [];
+          self.$$modeled = null;
+          self.length = self.$$data.length;
+          self.$$origData = null;
           if (keepHistory !== true) {
-            delete self.__sort;
-            delete self.__filter;
+            delete self.$$sort;
+            delete self.$$filter;
           }
         }
         return self;
@@ -407,9 +424,9 @@ function CollectionFactory(Base, Singleton) {
       clone: function () {
         var self = this,
             ret = self._super.apply(self, arguments);
-        ret.__data = m_copy(self.__data);
-        ret.__addData = m_copy(self.__addData);
-        ret.__origData = m_copy(self.__origData);
+        ret.$$data = m_copy(self.$$data);
+        ret.$$addData = m_copy(self.$$addData);
+        ret.$$origData = m_copy(self.$$origData);
         ret.length = self.length;
         ret.$loaded = ret.$loaded;
         ret.$selected = self.$selected;
@@ -437,8 +454,8 @@ function CollectionFactory(Base, Singleton) {
       */
       refresh: function () {
         var self = this;
-        if (self.__lastReadData) {
-          return self.read(self.__lastReadData);
+        if (self.$$lastReadData) {
+          return self.read(self.$$lastReadData);
         }
         return self.read();
       },
@@ -483,7 +500,7 @@ function CollectionFactory(Base, Singleton) {
 
         if (m_isFunction(self.readService)) {
           self.$busy = true;
-          self.__lastReadData = data || {};
+          self.$$lastReadData = data || {};
           ret = self.readService(
             data,
             function (data) {

@@ -1,7 +1,7 @@
 {
   "name": "angular-m",
   "description": "Angular-based model library for use in MVC framework design",
-  "version": "0.1.16",
+  "version": "0.2.0",
   "homepage": "https://github.com/dlhdesign/angular-m",
   "author": "David Hutchings",
   "repository": {
