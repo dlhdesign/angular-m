@@ -14,7 +14,8 @@ var m_isFunction = angular.isFunction,
     m_isNull = function(val) { return val === null; },
     m_forEach = angular.forEach,
     m_extend = angular.extend,
-    m_copy = angular.copy;
+    m_copy = angular.copy,
+    m_equals = angular.equals;
 
 function inherit(parent, extra) {
   return m_extend(new (m_extend(function () {}, { prototype: parent }))(), extra);

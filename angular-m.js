@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.2.0
+ * @version v0.2.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -27,7 +27,8 @@ var m_isFunction = angular.isFunction,
     m_isNull = function(val) { return val === null; },
     m_forEach = angular.forEach,
     m_extend = angular.extend,
-    m_copy = angular.copy;
+    m_copy = angular.copy,
+    m_equals = angular.equals;
 
 function inherit(parent, extra) {
   return m_extend(new (m_extend(function () {}, { prototype: parent }))(), extra);
@@ -236,11 +237,7 @@ function RegExConstant() {
     latLong:    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
     zip:        /^\d{5}(?:[-\s]\d{4})?$/,
     timeZone:   /^GMT\s[+-]\d{2}:\d{2}$/,
-    timeStr:    /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/,
-    number:     /^[+\-]?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?$/,
-    object:     /^{.*}$/,
-    array:      /^\[.*]$/,
-    boolean:    /^true|false$/
+    timeStr:    /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
   };
 }
 
@@ -721,7 +718,7 @@ function SingletonFactory(Base, REGEX) {
 
     // required
     if ( fieldConfig.required === true || ( m_isFunction(fieldConfig.required) === true && fieldConfig.required.call(self, val) === true ) ) {
-      if ( val === undefined || val === null || val.length === 0 ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError.call(self, fieldConfig.methodName, 'required', false );
         ret = false;
       } else {
@@ -729,17 +726,17 @@ function SingletonFactory(Base, REGEX) {
       }
     }
 
-    if ( val !== undefined && val !== null ) {
+    if ( m_isUndefined(val) === false && m_isNull(val) === false ) {
     // START DEFINED-ONLY CHECKS
 
       // type
       if ( indexOf(['st','nu','ob','ar','bo','dt'], fieldConfig.type ) > -1 ) {
         setError.call(self, fieldConfig.methodName, 'type', true );
         if ( ( fieldConfig.type === 'st' && !m_isString(val) )
-          || ( fieldConfig.type === 'nu' && !(m_isNumber(val) || REGEX.number.test(val) ) )
-          || ( fieldConfig.type === 'ob' && !(m_isObject(val) || REGEX.object.test(val) ) )
-          || ( fieldConfig.type === 'ar' && !(m_isArray(val) || REGEX.array.test(val) ) )
-          || ( fieldConfig.type === 'bo' && !(m_isBoolean(val) || REGEX.boolean.test(val) ) )
+          || ( fieldConfig.type === 'nu' && !m_isNumber(val) )
+          || ( fieldConfig.type === 'ob' && !m_isObject(val) )
+          || ( fieldConfig.type === 'ar' && !m_isArray(val) )
+          || ( fieldConfig.type === 'bo' && !m_isBoolean(val) )
           || ( fieldConfig.type === 'dt' && !m_isDate(new Date(val)) )
         ) {
           setError.call(self, fieldConfig.methodName, 'type', true );
@@ -784,29 +781,29 @@ function SingletonFactory(Base, REGEX) {
     }
 
     // limit
-    if ( m_isArray(fieldConfig.limit) ) {
+    if ( m_isUndefined(fieldConfig.limit) === false && m_isNull(fieldConfig.limit) === false ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError.call(self, fieldConfig.methodName, 'limit', true );
+      } else if ( m_isArray(fieldConfig.limit) || m_isObject(fieldConfig.limit) ) {
+        limit = false;
+        m_forEach(fieldConfig.limit, function(lim) {
+          if ( m_isObject( lim ) === true && !m_isNull(lim.value) && !m_isUndefined(lim.value) ) {
+            limit = limit && m_equals(lim.value, val);
+          } else {
+            limit = limit && m_equals(lim, val);
+          }
+        });
+        setError.call(self, fieldConfig.methodName, 'limit', limit );
+        ret = limit && ret;
+      } else if ( m_isString(fieldConfig.limit) ) {
+        limit = m_equals(fieldConfig.limit, val);
+        setError.call(self, fieldConfig.methodName, 'limit', limit );
+        ret = limit && ret;
+      } else {
+        setError.call(self, fieldConfig.methodName, 'limit', false );
+        ret = false;
       }
-      limit = fieldConfig.limit.indexOf( val ) > -1;
-      setError.call(self, fieldConfig.methodName, 'limit', limit );
-      ret = limit && ret;
-    } else if ( m_isObject(fieldConfig.limit) ) {
-      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError.call(self, fieldConfig.methodName, 'limit', true );
-      }
-      limit = fieldConfig.limit.hasOwnProperty( val );
-      setError.call(self, fieldConfig.methodName, 'limit', limit );
-      ret = limit && ret;
-    } else if ( m_isString(fieldConfig.limit) ) {
-      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError.call(self, fieldConfig.methodName, 'limit', true );
-      }
-      limit = fieldConfig.limit === val;
-      setError.call(self, fieldConfig.methodName, 'limit', limit );
-      ret = limit && ret;
     }
-
     return ret;
   }
 
