@@ -45,7 +45,7 @@ function SingletonFactory(Base, REGEX) {
     /*jshint laxbreak:true */
     var self = this,
         ret = true,
-        matches, limit;
+        matches, limit, equals;
 
     // required
     if ( fieldConfig.required === true || ( m_isFunction(fieldConfig.required) === true && fieldConfig.required.call(self, val) === true ) ) {
@@ -134,6 +134,25 @@ function SingletonFactory(Base, REGEX) {
         setError.call(self, fieldConfig.methodName, 'limit', false );
         ret = false;
       }
+    }
+
+    // equals
+    if ( m_isString(fieldConfig.equals) ) {
+      if ( m_isFunction(this[fieldConfig.equals]) && m_equals(this[fieldConfig.equals](), val) ) {
+        setError.call(self, fieldConfig.methodName, 'equals', true );
+      } else {
+        setError.call(self, fieldConfig.methodName, 'equals', false );
+        ret = false;
+      }
+    } else if ( m_isArray(fieldConfig.equals) ) {
+      equals = true;
+      m_forEach(fieldConfig.equals, function(val) {
+        if ( m_isFunction(this[val]) && m_equals(this[val](), val) ) {
+          equals = false;
+          return false;
+        }
+      });
+      setError.call(self, fieldConfig.methodName, 'equals', equals );
     }
     return ret;
   }
