@@ -9,7 +9,7 @@ function input() {
 
       function setValidity() {
         m_forEach(model.$errors, function (v, k) {
-          ctrl.$setValidity(k, v);
+          ctrl.$setValidity(k, !v);
         });
       }
 
