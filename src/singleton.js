@@ -567,7 +567,7 @@ function SingletonFactory(Base, REGEX) {
             if (self.$dirty === true) {
               data = self.pick(function (fieldConfig) {
                 if (fieldConfig.updateable !== false) {
-                  return fieldConfig.key;
+                  return true;
                 }
               });
             }
