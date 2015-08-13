@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.10
+ * @version v0.4.11
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -253,15 +253,13 @@ function HTTPService($rootScope, $http, $q) {
 angular.module( 'angular-m.http', [] )
   .service( '$mhttp', [ '$rootScope', '$http', '$q', HTTPService ] );
 
-function RegExConstant() {
-  return {
-    email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])+$/i,
-    latLong:    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
-    zip:        /^\d{5}(?:[-\s]\d{4})?$/,
-    timeZone:   /^GMT\s[+-]\d{2}:\d{2}$/,
-    timeStr:    /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
-  };
-}
+var RegExConstant = {
+  email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])+$/i,
+  latLong:    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
+  zip:        /^\d{5}(?:[-\s]\d{4})?$/,
+  timeZone:   /^GMT\s[+-]\d{2}:\d{2}$/,
+  timeStr:    /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+};
 
 angular.module( 'angular-m' )
   .constant( 'REGEX', RegExConstant );
