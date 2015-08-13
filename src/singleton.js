@@ -384,15 +384,15 @@ function SingletonFactory(Base, REGEX) {
         return ret;
       },
       /**
-      Validates each field.
-      @returns {Singleton} `this`
+      Validates each field and returns whether the model is valid or not.
+      @returns {boolean}
       */
       validate: function () {
         var self = this;
         self.each(function (fieldConfig) {
           self[ fieldConfig.methodName ].valid();
         });
-        return self;
+        return self.$valid;
       },
       /**
       Clears any pending data that may exist.

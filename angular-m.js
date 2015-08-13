@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.3.8
+ * @version v0.3.9
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1075,15 +1075,15 @@ function SingletonFactory(Base, REGEX) {
         return ret;
       },
       /**
-      Validates each field.
-      @returns {Singleton} `this`
+      Validates each field and returns whether the model is valid or not.
+      @returns {boolean}
       */
       validate: function () {
         var self = this;
         self.each(function (fieldConfig) {
           self[ fieldConfig.methodName ].valid();
         });
-        return self;
+        return self.$valid;
       },
       /**
       Clears any pending data that may exist.
