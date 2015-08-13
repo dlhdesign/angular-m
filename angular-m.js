@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.11
+ * @version v0.4.12
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -183,7 +183,7 @@ function HTTPService($rootScope, $http, $q) {
     if (isOnline === false) {
       fail(offlineError);
       deferred.reject(offlineError);
-    } else {    
+    } else {
       $http(config)
         .success(function (data) {
           if (m_isFunction(success)) {
@@ -2197,5 +2197,6 @@ function input() {
 
 angular.module('angular-m.inputs', [])
   .directive('input', input)
-  .directive('select', input);
+  .directive('select', input)
+  .directive('textarea', input);
 })(window, window.angular);

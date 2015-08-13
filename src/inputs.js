@@ -35,4 +35,5 @@ function input() {
 
 angular.module('angular-m.inputs', [])
   .directive('input', input)
-  .directive('select', input);
+  .directive('select', input)
+  .directive('textarea', input);

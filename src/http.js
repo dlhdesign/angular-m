@@ -20,7 +20,7 @@ function HTTPService($rootScope, $http, $q) {
     if (isOnline === false) {
       fail(offlineError);
       deferred.reject(offlineError);
-    } else {    
+    } else {
       $http(config)
         .success(function (data) {
           if (m_isFunction(success)) {
