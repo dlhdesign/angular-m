@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.8
+ * @version v0.4.9
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -965,6 +965,7 @@ function SingletonFactory(Base, REGEX) {
           self[ fieldConfig.methodName ].$label = fieldConfig.label || label(fieldConfig.configKey);
           fieldConfig.label = self[fieldConfig.methodName].$label;
           self[ fieldConfig.methodName ].$errors = {};
+          self[ fieldConfig.methodName ].$parent = self;
           self[ fieldConfig.methodName ].$config = fieldConfig;
           self[ fieldConfig.methodName ].valid = function ( val ) {
             var ret = true,
@@ -990,6 +991,7 @@ function SingletonFactory(Base, REGEX) {
               }
             }
             self.$invalid = !self.$valid;
+            self.trigger( 'validated.' + fieldConfig.methodName, ret );
             return ret;
           };
         }); 
@@ -1105,6 +1107,7 @@ function SingletonFactory(Base, REGEX) {
         self.each(function (fieldConfig) {
           self[ fieldConfig.methodName ].valid();
         });
+        self.trigger( 'validated', self.$valid );
         return self.$valid;
       },
       /**
@@ -2159,22 +2162,17 @@ function input() {
 
       function setValidity() {
         m_forEach(model.$errors, function (v, k) {
+          // Invert the current error state (error === true means valid === false)
           ctrl.$setValidity(k, !v);
         });
       }
 
-      function validate(val) {
-        model.valid(val);
-        setValidity();
-        return val;
-      }
-
-      if (!m_isFunction(model) || !m_isFunction(model.valid)) {
+      if (!m_isFunction(model) || !m_isObject(model.$config) || !m_isObject(model.$parent)) {
         return;
       }
 
-      ctrl.$parsers.unshift(validate);
-      ctrl.$formatters.unshift(validate);
+      // Use model event binding instead of ctrl.$parser/$formatter so that we can trigger a change on "equals" checks, etc.
+      model.$parent.bind('validated.' + model.$config.methodName, setValidity);
     }
   };
 }

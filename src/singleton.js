@@ -274,6 +274,7 @@ function SingletonFactory(Base, REGEX) {
           self[ fieldConfig.methodName ].$label = fieldConfig.label || label(fieldConfig.configKey);
           fieldConfig.label = self[fieldConfig.methodName].$label;
           self[ fieldConfig.methodName ].$errors = {};
+          self[ fieldConfig.methodName ].$parent = self;
           self[ fieldConfig.methodName ].$config = fieldConfig;
           self[ fieldConfig.methodName ].valid = function ( val ) {
             var ret = true,
@@ -299,6 +300,7 @@ function SingletonFactory(Base, REGEX) {
               }
             }
             self.$invalid = !self.$valid;
+            self.trigger( 'validated.' + fieldConfig.methodName, ret );
             return ret;
           };
         }); 
@@ -414,6 +416,7 @@ function SingletonFactory(Base, REGEX) {
         self.each(function (fieldConfig) {
           self[ fieldConfig.methodName ].valid();
         });
+        self.trigger( 'validated', self.$valid );
         return self.$valid;
       },
       /**

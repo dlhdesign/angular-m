@@ -9,22 +9,17 @@ function input() {
 
       function setValidity() {
         m_forEach(model.$errors, function (v, k) {
+          // Invert the current error state (error === true means valid === false)
           ctrl.$setValidity(k, !v);
         });
       }
 
-      function validate(val) {
-        model.valid(val);
-        setValidity();
-        return val;
-      }
-
-      if (!m_isFunction(model) || !m_isFunction(model.valid)) {
+      if (!m_isFunction(model) || !m_isObject(model.$config) || !m_isObject(model.$parent)) {
         return;
       }
 
-      ctrl.$parsers.unshift(validate);
-      ctrl.$formatters.unshift(validate);
+      // Use model event binding instead of ctrl.$parser/$formatter so that we can trigger a change on "equals" checks, etc.
+      model.$parent.bind('validated.' + model.$config.methodName, setValidity);
     }
   };
 }
