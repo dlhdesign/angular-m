@@ -119,9 +119,9 @@ function SingletonFactory(Base, REGEX) {
         limit = false;
         m_forEach(fieldConfig.limit, function (lim) {
           if ( m_isObject( lim ) === true && !m_isNull(lim.value) && !m_isUndefined(lim.value) ) {
-            limit = limit && m_equals(lim.value, val);
+            limit = limit || m_equals(lim.value, val);
           } else {
-            limit = limit && m_equals(lim, val);
+            limit = limit || m_equals(lim, val);
           }
         });
         setError.call(self, fieldConfig.methodName, 'limit', limit );
@@ -280,15 +280,13 @@ function SingletonFactory(Base, REGEX) {
               self.$valid = ret;
               self.$invalid = !ret;
             } else if (self.$valid === false) {
-              if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
-                for(; i<self.$$fieldConfig.length; i++) {
-                  self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
-                  if (self.$valid === false) {
-                    self.$invalid = true;
-                    break;
-                  }
+              for(; i<self.$$fieldConfig.length; i++) {
+                self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
+                if (self.$valid === false) {
+                  self.$invalid = true;
+                  break;
                 }
-              };
+              }
             }
             return ret;
           };
