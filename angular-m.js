@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.0
+ * @version v0.4.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -792,6 +792,25 @@ function SingletonFactory(Base, REGEX) {
         }
       }
 
+      // equals
+      if ( m_isString(fieldConfig.equals) ) {
+        if ( m_isFunction(this[fieldConfig.equals]) && m_equals(this[fieldConfig.equals](), val) ) {
+          setError.call(self, fieldConfig.methodName, 'equals', true );
+        } else {
+          setError.call(self, fieldConfig.methodName, 'equals', false );
+          ret = false;
+        }
+      } else if ( m_isArray(fieldConfig.equals) ) {
+        equals = true;
+        m_forEach(fieldConfig.equals, function (val) {
+          if ( m_isFunction(this[val]) && m_equals(this[val](), val) ) {
+            equals = false;
+            return false;
+          }
+        });
+        setError.call(self, fieldConfig.methodName, 'equals', equals );
+      }
+
     // END DEFINED-ONLY CHECKS
     }
 
@@ -827,24 +846,6 @@ function SingletonFactory(Base, REGEX) {
       }
     }
 
-    // equals
-    if ( m_isString(fieldConfig.equals) ) {
-      if ( m_isFunction(this[fieldConfig.equals]) && m_equals(this[fieldConfig.equals](), val) ) {
-        setError.call(self, fieldConfig.methodName, 'equals', true );
-      } else {
-        setError.call(self, fieldConfig.methodName, 'equals', false );
-        ret = false;
-      }
-    } else if ( m_isArray(fieldConfig.equals) ) {
-      equals = true;
-      m_forEach(fieldConfig.equals, function (val) {
-        if ( m_isFunction(this[val]) && m_equals(this[val](), val) ) {
-          equals = false;
-          return false;
-        }
-      });
-      setError.call(self, fieldConfig.methodName, 'equals', equals );
-    }
     return ret;
   }
 
