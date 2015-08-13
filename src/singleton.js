@@ -110,18 +110,20 @@ function SingletonFactory(Base, REGEX) {
         if ( m_isFunction(this[fieldConfig.equals]) && m_equals(this[fieldConfig.equals](), val) ) {
           setError.call(self, fieldConfig.methodName, 'equals', false );
         } else {
-          // Check the equal target for validity as they are likely linked
-          this[fieldConfig.equals].valid();
           setError.call(self, fieldConfig.methodName, 'equals', true );
           ret = false;
         }
+        // Check the equal target for validity as they are likely linked
+        this[fieldConfig.equals].valid();
       } else if ( m_isArray(fieldConfig.equals) ) {
         equals = false;
         m_forEach(fieldConfig.equals, function (target) {
-          if ( m_isFunction(this[target]) && m_equals(this[target](), val) ) {
+          if ( m_isFunction(this[target]) ) {
+            if ( m_equals(this[target](), val) ) {
+              equals = true;
+            }
             // Check the equal target for validity as they are likely linked
             this[target].valid();
-            equals = true;
           }
         });
         setError.call(self, fieldConfig.methodName, 'equals', !equals );
