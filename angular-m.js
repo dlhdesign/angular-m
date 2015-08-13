@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.3.3
+ * @version v0.3.4
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1058,10 +1058,17 @@ function SingletonFactory(Base, REGEX) {
       */
       pick: function (fields) {
         var self = this,
-            ret = {};
+            ret = {},
+            _fields = [];
         if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
           if (m_isFunction(fields)) {
-            fields = pick(self.$$fieldConfig, fields, self);
+            m_forEach(self.$$fieldConfig, function (config) {
+              if ( fields.call(self, config) === true ) {
+                _fields.push(config.key);
+              }
+            });
+          } else {
+            _fields = fields;
           };
           ret = pick(self.get(), fields);
         }
