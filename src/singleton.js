@@ -47,13 +47,17 @@ function SingletonFactory(Base, REGEX) {
         ret = true,
         matches, limit, equals;
 
+    // setError(... true) === In error state
+    // setError(... false) === In valid state
+    // ret === false if ever setError(... true)
+
     // required
     if ( fieldConfig.required === true || ( m_isFunction(fieldConfig.required) === true && fieldConfig.required.call(self, val) === true ) ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError.call(self, fieldConfig.methodName, 'required', false );
+        setError.call(self, fieldConfig.methodName, 'required', true );
         ret = false;
       } else {
-        setError.call(self, fieldConfig.methodName, 'required', true );
+        setError.call(self, fieldConfig.methodName, 'required', false );
       }
     }
 
@@ -62,7 +66,7 @@ function SingletonFactory(Base, REGEX) {
 
       // type
       if ( indexOf(['st','nu','ob','ar','bo','dt'], fieldConfig.type ) > -1 ) {
-        setError.call(self, fieldConfig.methodName, 'type', true );
+        setError.call(self, fieldConfig.methodName, 'type', false );
         if ( ( fieldConfig.type === 'st' && !m_isString(val) )
           || ( fieldConfig.type === 'nu' && !m_isNumber(val) )
           || ( fieldConfig.type === 'ob' && !m_isObject(val) )
@@ -78,25 +82,25 @@ function SingletonFactory(Base, REGEX) {
       // min/max
       if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
-          setError.call(self, fieldConfig.methodName, 'min', true );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
-          setError.call(self, fieldConfig.methodName, 'min', true );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(fieldConfig.min) ) {
-          setError.call(self, fieldConfig.methodName, 'min', true );
-        } else {
           setError.call(self, fieldConfig.methodName, 'min', false );
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
+          setError.call(self, fieldConfig.methodName, 'min', false );
+        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(fieldConfig.min) ) {
+          setError.call(self, fieldConfig.methodName, 'min', false );
+        } else {
+          setError.call(self, fieldConfig.methodName, 'min', true );
           ret = false;
         }
       }
       if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
         if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
-          setError.call(self, fieldConfig.methodName, 'max', true );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
-          setError.call(self, fieldConfig.methodName, 'max', true );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(fieldConfig.max) ) {
-          setError.call(self, fieldConfig.methodName, 'max', true );
-        } else {
           setError.call(self, fieldConfig.methodName, 'max', false );
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
+          setError.call(self, fieldConfig.methodName, 'max', false );
+        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(fieldConfig.max) ) {
+          setError.call(self, fieldConfig.methodName, 'max', false );
+        } else {
+          setError.call(self, fieldConfig.methodName, 'max', true );
           ret = false;
         }
       }
@@ -104,19 +108,21 @@ function SingletonFactory(Base, REGEX) {
       // equals
       if ( m_isString(fieldConfig.equals) ) {
         if ( m_isFunction(this[fieldConfig.equals]) && m_equals(this[fieldConfig.equals](), val) ) {
-          setError.call(self, fieldConfig.methodName, 'equals', true );
-        } else {
           setError.call(self, fieldConfig.methodName, 'equals', false );
+        } else {
+          setError.call(self, fieldConfig.methodName, 'equals', true );
           ret = false;
         }
       } else if ( m_isArray(fieldConfig.equals) ) {
         equals = true;
-        m_forEach(fieldConfig.equals, function (val) {
-          if ( m_isFunction(this[val]) && m_equals(this[val](), val) ) {
+        m_forEach(fieldConfig.equals, function (target) {
+          if ( m_isFunction(this[target]) && m_equals(this[target](), val) ) {
             equals = false;
-            return false;
           }
         });
+        if (equals === true) {
+          ret = false
+        }
         setError.call(self, fieldConfig.methodName, 'equals', equals );
       }
 
@@ -126,14 +132,14 @@ function SingletonFactory(Base, REGEX) {
     // matches
     if ( m_isRegEx(fieldConfig.matches) ) {
       matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
-      setError.call(self, fieldConfig.methodName, 'matches', matches );
+      setError.call(self, fieldConfig.methodName, 'matches', !matches );
       ret = matches && ret;
     }
 
     // limit
     if ( m_isUndefined(fieldConfig.limit) === false && m_isNull(fieldConfig.limit) === false ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
-        setError.call(self, fieldConfig.methodName, 'limit', true );
+        setError.call(self, fieldConfig.methodName, 'limit', false );
       } else if ( m_isArray(fieldConfig.limit) || m_isObject(fieldConfig.limit) ) {
         limit = false;
         m_forEach(fieldConfig.limit, function (lim) {
@@ -143,15 +149,15 @@ function SingletonFactory(Base, REGEX) {
             limit = limit || m_equals(lim, val);
           }
         });
-        setError.call(self, fieldConfig.methodName, 'limit', limit );
+        // limit === true if matched; false if not, so invert it for setError
+        setError.call(self, fieldConfig.methodName, 'limit', !limit );
         ret = limit && ret;
       } else if ( m_isString(fieldConfig.limit) ) {
         limit = m_equals(fieldConfig.limit, val);
-        setError.call(self, fieldConfig.methodName, 'limit', limit );
+        setError.call(self, fieldConfig.methodName, 'limit', !limit );
         ret = limit && ret;
       } else {
         setError.call(self, fieldConfig.methodName, 'limit', false );
-        ret = false;
       }
     }
 
@@ -274,21 +280,22 @@ function SingletonFactory(Base, REGEX) {
             }
             if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
-              setError( self, fieldConfig.methodName, 'validator', ret );
+              setError( self, fieldConfig.methodName, 'validator', !ret );
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             if (ret === false) {
               self.$valid = ret;
-              self.$invalid = !ret;
             } else if (self.$valid === false) {
+              // Set $valid state to null to prevent endless loop if first field is valid
+              self.$valid = null;
               for(; i<self.$$fieldConfig.length; i++) {
                 self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
                 if (self.$valid === false) {
-                  self.$invalid = true;
                   break;
                 }
               }
             }
+            self.$invalid = !self.$valid;
             return ret;
           };
         }); 
