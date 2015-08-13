@@ -83,7 +83,7 @@ function pick(obj, fields, context) {
     fields = fields.split(',');
   }
   if (m_isFunction(fields) || (m_isArray(fields) && fields.length > 0)) {
-    m_forEach(obj, function (value, key) {
+    m_forEach(obj, function (key, value) {
       var include = false;
       if (m_isFunction(fields)) {
         include = fields.call(context || obj, value, key);

@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.3.6
+ * @version v0.3.7
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -96,7 +96,7 @@ function pick(obj, fields, context) {
     fields = fields.split(',');
   }
   if (m_isFunction(fields) || (m_isArray(fields) && fields.length > 0)) {
-    m_forEach(obj, function (value, key) {
+    m_forEach(obj, function (key, value) {
       var include = false;
       if (m_isFunction(fields)) {
         include = fields.call(context || obj, value, key);
