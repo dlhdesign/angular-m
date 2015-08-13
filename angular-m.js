@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.3
+ * @version v0.4.4
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -827,7 +827,9 @@ function SingletonFactory(Base, REGEX) {
 
     // limit
     if ( m_isUndefined(fieldConfig.limit) === false && m_isNull(fieldConfig.limit) === false ) {
-      if ( m_isArray(fieldConfig.limit) || m_isObject(fieldConfig.limit) ) {
+      if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
+        setError.call(self, fieldConfig.methodName, 'limit', false );
+      } else if ( m_isArray(fieldConfig.limit) || m_isObject(fieldConfig.limit) ) {
         limit = false;
         m_forEach(fieldConfig.limit, function (lim) {
           if ( m_isObject( lim ) === true && !m_isNull(lim.value) && !m_isUndefined(lim.value) ) {
