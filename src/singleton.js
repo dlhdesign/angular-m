@@ -110,9 +110,11 @@ function SingletonFactory(Base, REGEX) {
         if ( m_isFunction(self[fieldConfig.equals]) && m_equals(self[fieldConfig.equals](), val) ) {
           setError.call(self, fieldConfig.methodName, 'equals', false );
           setError.call(self, fieldConfig.equals, 'equals', false );
+          self.trigger('validated.' + fieldConfig.equals, false);
         } else {
           setError.call(self, fieldConfig.methodName, 'equals', true );
           setError.call(self, fieldConfig.equals, 'equals', true );
+          self.trigger('validated.' + fieldConfig.equals, true);
           ret = false;
         }
       } else if ( m_isArray(fieldConfig.equals) ) {
@@ -122,8 +124,10 @@ function SingletonFactory(Base, REGEX) {
             if ( m_equals(self[target](), val) ) {
               equals = true;
               setError.call(self, target, 'equals', false );
+              self.trigger('validated.' + target, false);
             } else {
               setError.call(self, target, 'equals', true );
+              self.trigger('validated.' + target, true);
             }
           }
         });
@@ -182,6 +186,7 @@ function SingletonFactory(Base, REGEX) {
         self.$$setData = {};
         self.$loaded = data ? true : false;
         self.$dirty = false;
+        self.$pristine = true;
         self.$busy = false;
         self.$valid = true;
         self.$invalid = false;
@@ -232,6 +237,7 @@ function SingletonFactory(Base, REGEX) {
             }
             self.$$merged = false;
             self.$dirty = true;
+            self.$pristine = false;
             self.$loaded = true;
             fieldConfig.$$getterCacheSet = false;
             delete fieldConfig.$$getterCache;
@@ -327,6 +333,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         self.$$merged = false;
         self.$dirty = true;
+        self.$pristine = false;
         self.$$setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
         self.clearCache();
@@ -427,6 +434,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         if (self.$dirty) {
           self.$dirty = false;
+          self.$pristine = true;
           self.clearCache();
           self.$$setData = {};
         }
@@ -441,6 +449,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this;
         if ( data || self.$dirty ) {
           self.$dirty = false;
+          self.$pristine = true;
           self.$$data = data || self.get();
           self.$$setData = {};
           self.trigger('finalize', data);
@@ -455,7 +464,9 @@ function SingletonFactory(Base, REGEX) {
         var self = this,
             ret = self._super.apply(self, arguments);
         ret.$$data = m_copy(self.$$data);
-        ret.set(self.$$setData);
+        if ( objectKeys(self.$$setData).length > 0 ) {
+          ret.set(self.$$setData);
+        }
         ret.$loaded = self.$loaded;
         ret.$parent = self.$parent;
         return ret;

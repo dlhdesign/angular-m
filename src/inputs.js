@@ -14,12 +14,21 @@ function input() {
         });
       }
 
+      function validate(val) {
+        model.valid(val);
+        return val;
+      }
+
       if (!m_isFunction(model) || !m_isObject(model.$config) || !m_isObject(model.$parent)) {
         return;
       }
 
-      // Use model event binding instead of ctrl.$parser/$formatter so that we can trigger a change on "equals" checks, etc.
+      // Use model event binding for validity setting so that we can trigger a change on "equals" checks, etc.
       model.$parent.bind('validated.' + model.$config.methodName, setValidity);
+
+      // Use parser/formatter to check validity on change of value
+      ctrl.$parsers.unshift(validate);
+      ctrl.$formatters.unshift(validate);
     }
   };
 }
