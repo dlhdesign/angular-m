@@ -379,7 +379,7 @@ function SingletonFactory(Base, REGEX) {
           } else {
             _fields = fields;
           };
-          ret = pick(self.get(), fields);
+          ret = pick(self.get(), _fields);
         }
         return ret;
       },
