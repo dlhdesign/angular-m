@@ -5,7 +5,8 @@ mFiles = {
     'src/regex.js',
     'src/base.js',
     'src/singleton.js',
-    'src/collection.js'
+    'src/collection.js',
+    'src/inputs.js'
   ],
   test: [
     'spec/*-spec.js'

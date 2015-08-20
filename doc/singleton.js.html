@@ -1,4 +1,32 @@
-function SingletonFactory(Base, REGEX) {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: singleton.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: singleton.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>function SingletonFactory(Base, REGEX) {
   /**
   Base model that represents a single object.
   @class Singleton
@@ -52,7 +80,7 @@ function SingletonFactory(Base, REGEX) {
     // ret === false if ever setError(... true)
 
     // required
-    if ( fieldConfig.required === true || ( m_isFunction(fieldConfig.required) === true && fieldConfig.required.call(self, val) === true ) ) {
+    if ( fieldConfig.required === true || ( m_isFunction(fieldConfig.required) === true &amp;&amp; fieldConfig.required.call(self, val) === true ) ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError.call(self, fieldConfig.methodName, 'required', true );
         ret = false;
@@ -61,18 +89,18 @@ function SingletonFactory(Base, REGEX) {
       }
     }
 
-    if ( m_isUndefined(val) === false && m_isNull(val) === false ) {
+    if ( m_isUndefined(val) === false &amp;&amp; m_isNull(val) === false ) {
     // START DEFINED-ONLY CHECKS
 
       // type
       if ( indexOf(['st','nu','ob','ar','bo','dt'], fieldConfig.type ) > -1 ) {
         setError.call(self, fieldConfig.methodName, 'type', false );
-        if ( ( fieldConfig.type === 'st' && !m_isString(val) )
-          || ( fieldConfig.type === 'nu' && !m_isNumber(val) )
-          || ( fieldConfig.type === 'ob' && !m_isObject(val) )
-          || ( fieldConfig.type === 'ar' && !m_isArray(val) )
-          || ( fieldConfig.type === 'bo' && !m_isBoolean(val) )
-          || ( fieldConfig.type === 'dt' && !m_isDate(new Date(val)) )
+        if ( ( fieldConfig.type === 'st' &amp;&amp; !m_isString(val) )
+          || ( fieldConfig.type === 'nu' &amp;&amp; !m_isNumber(val) )
+          || ( fieldConfig.type === 'ob' &amp;&amp; !m_isObject(val) )
+          || ( fieldConfig.type === 'ar' &amp;&amp; !m_isArray(val) )
+          || ( fieldConfig.type === 'bo' &amp;&amp; !m_isBoolean(val) )
+          || ( fieldConfig.type === 'dt' &amp;&amp; !m_isDate(new Date(val)) )
         ) {
           setError.call(self, fieldConfig.methodName, 'type', true );
           ret = false;
@@ -80,24 +108,24 @@ function SingletonFactory(Base, REGEX) {
       }
 
       // min/max
-      if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
-        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
+      if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' &amp;&amp; m_isDate(fieldConfig.min) ) ) {
+        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) &amp;&amp; val.length >= fieldConfig.min ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) &amp;&amp; parseFloat( val ) >= fieldConfig.min ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(fieldConfig.min) ) {
+        } else if ( fieldConfig.type === 'dt' &amp;&amp; new Date( val ) >= new Date(fieldConfig.min) ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
         } else {
           setError.call(self, fieldConfig.methodName, 'min', true );
           ret = false;
         }
       }
-      if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
-        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
+      if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' &amp;&amp; m_isDate(fieldConfig.max) ) ) {
+        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) &amp;&amp; val.length &lt;= fieldConfig.max ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) &amp;&amp; parseFloat( val ) &lt;= fieldConfig.max ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(fieldConfig.max) ) {
+        } else if ( fieldConfig.type === 'dt' &amp;&amp; new Date( val ) &lt;= new Date(fieldConfig.max) ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
         } else {
           setError.call(self, fieldConfig.methodName, 'max', true );
@@ -107,7 +135,7 @@ function SingletonFactory(Base, REGEX) {
 
       // equals
       if ( m_isString(fieldConfig.equals) ) {
-        if ( m_isFunction(self[fieldConfig.equals]) && m_equals(self[fieldConfig.equals](), val) ) {
+        if ( m_isFunction(self[fieldConfig.equals]) &amp;&amp; m_equals(self[fieldConfig.equals](), val) ) {
           setError.call(self, fieldConfig.methodName, 'equals', false );
           setError.call(self, fieldConfig.equals, 'equals', false );
           self.trigger('validated.' + fieldConfig.equals, false);
@@ -132,7 +160,7 @@ function SingletonFactory(Base, REGEX) {
           }
         });
         setError.call(self, fieldConfig.methodName, 'equals', !equals );
-        ret = ret && equals;
+        ret = ret &amp;&amp; equals;
       }
 
     // END DEFINED-ONLY CHECKS
@@ -142,17 +170,17 @@ function SingletonFactory(Base, REGEX) {
     if ( m_isRegEx(fieldConfig.matches) ) {
       matches = fieldConfig.matches.test(val) || ( m_isUndefined(val) || m_isNull(val) || val.length === 0 );
       setError.call(self, fieldConfig.methodName, 'matches', !matches );
-      ret = matches && ret;
+      ret = matches &amp;&amp; ret;
     }
 
     // limit
-    if ( m_isUndefined(fieldConfig.limit) === false && m_isNull(fieldConfig.limit) === false ) {
+    if ( m_isUndefined(fieldConfig.limit) === false &amp;&amp; m_isNull(fieldConfig.limit) === false ) {
       if ( m_isUndefined(val) || m_isNull(val) || val.length === 0 ) {
         setError.call(self, fieldConfig.methodName, 'limit', false );
       } else if ( m_isArray(fieldConfig.limit) || m_isObject(fieldConfig.limit) ) {
         limit = false;
         m_forEach(fieldConfig.limit, function (lim) {
-          if ( m_isObject( lim ) === true && !m_isNull(lim.value) && !m_isUndefined(lim.value) ) {
+          if ( m_isObject( lim ) === true &amp;&amp; !m_isNull(lim.value) &amp;&amp; !m_isUndefined(lim.value) ) {
             limit = limit || m_equals(lim.value, val);
           } else {
             limit = limit || m_equals(lim, val);
@@ -160,11 +188,11 @@ function SingletonFactory(Base, REGEX) {
         });
         // limit === true when a match was found, so invert for setError
         setError.call(self, fieldConfig.methodName, 'limit', !limit );
-        ret = limit && ret;
+        ret = limit &amp;&amp; ret;
       } else if ( m_isString(fieldConfig.limit) || m_isNumber(fieldConfig.limit) || m_isBoolean(fieldConfig.limit) ) {
         limit = m_equals(fieldConfig.limit, val);
         setError.call(self, fieldConfig.methodName, 'limit', !limit );
-        ret = limit && ret;
+        ret = limit &amp;&amp; ret;
       }
     }
 
@@ -193,10 +221,10 @@ function SingletonFactory(Base, REGEX) {
         self.$$fieldConfig = false;
 
         return self.each(function (fieldConfig) {
-          if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
+          if ( fieldConfig.getter !== undefined &amp;&amp; !m_isFunction(fieldConfig.getter) ) {
             throw new Error('Singleton Init Error: "getter" must be undefined/null or a function');
           }
-          if ( fieldConfig.setter !== undefined && !m_isFunction(fieldConfig.setter) ) {
+          if ( fieldConfig.setter !== undefined &amp;&amp; !m_isFunction(fieldConfig.setter) ) {
             throw new Error('Singleton Init Error: "setter" must be undefined/null or a function');
           }
           function getter() {
@@ -217,7 +245,7 @@ function SingletonFactory(Base, REGEX) {
                 }
                 ret = ret[ field.shift() ];
               }
-              if ( ( ret === null || ret === undefined ) && fieldConfig.default !== undefined ) {
+              if ( ( ret === null || ret === undefined ) &amp;&amp; fieldConfig.default !== undefined ) {
                 ret = fieldConfig.default;
               }
               if ( m_isFunction(fieldConfig.mutateGet) === true ) {
@@ -292,13 +320,13 @@ function SingletonFactory(Base, REGEX) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
               setError(self, fieldConfig.methodName, 'validator', !ret);
             }
-            ret = validate.call(self, val, fieldConfig) && ret;
+            ret = validate.call(self, val, fieldConfig) &amp;&amp; ret;
             if (ret === false) {
               self.$valid = ret;
             } else if (self.$valid === false) {
               // Set $valid state to null to prevent endless loop if first field is valid
               self.$valid = null;
-              for(; i<self.$$fieldConfig.length; i++) {
+              for(; i&lt;self.$$fieldConfig.length; i++) {
                 self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
                 if (self.$valid === false) {
                   break;
@@ -367,7 +395,7 @@ function SingletonFactory(Base, REGEX) {
       */
       each: function (cb) {
         var self = this;
-        if ( m_isObject(self.fields) && self.$$fieldConfig === false ) {
+        if ( m_isObject(self.fields) &amp;&amp; self.$$fieldConfig === false ) {
           self.$$fieldConfig = [];
           m_forEach(self.fields, function (field, key) {
             var fieldConfig = m_isFunction(field) ? field.apply(self, arguments) : m_isObject(field) ? m_copy(field) : {};
@@ -377,7 +405,7 @@ function SingletonFactory(Base, REGEX) {
             self.$$fieldConfig.push(fieldConfig);
           });
         }
-        if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
+        if ( m_isArray(self.$$fieldConfig) === true &amp;&amp; self.$$fieldConfig.length > 0 ) {
           m_forEach(self.$$fieldConfig, function (fieldConfig) {
             cb.call(self, fieldConfig);
           });
@@ -400,7 +428,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this,
             ret = {},
             _fields = [];
-        if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
+        if ( m_isArray(self.$$fieldConfig) === true &amp;&amp; self.$$fieldConfig.length > 0 ) {
           if (m_isFunction(fields)) {
             m_forEach(self.$$fieldConfig, function (config) {
               if ( fields.call(self, config) === true ) {
@@ -669,7 +697,7 @@ function SingletonFactory(Base, REGEX) {
           self.$busy = true;
           if (arguments.length === 0) {
             if (self.$dirty === true) {
-              if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
+              if ( m_isArray(self.$$fieldConfig) === true &amp;&amp; self.$$fieldConfig.length > 0 ) {
                 fields = pick(self.$$fieldConfig, function (fieldConfig) {
                   if (fieldConfig.updateable !== false) {
                     return fieldConfig.key;
@@ -887,3 +915,26 @@ function SingletonFactory(Base, REGEX) {
 }
 angular.module( 'angular-m' )
   .factory( 'Singleton', ['Base', 'REGEX', SingletonFactory ] );
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Base.html">Base</a></li><li><a href="Collection.html">Collection</a></li><li><a href="Singleton.html">Singleton</a></li></ul><h3>Events</h3><ul><li><a href="Base.html#event:cloned">cloned</a></li><li><a href="Base.html#event:finalized">finalized</a></li><li><a href="Base.html#event:notified">notified</a></li><li><a href="Base.html#event:rejected">rejected</a></li><li><a href="Base.html#event:resolved">resolved</a></li><li><a href="Base.html#event:unfinalized">unfinalized</a></li><li><a href="Collection.html#event:cloned">cloned</a></li><li><a href="Collection.html#event:finalized">finalized</a></li><li><a href="Collection.html#event:notified">notified</a></li><li><a href="Collection.html#event:rejected">rejected</a></li><li><a href="Collection.html#event:resolved">resolved</a></li><li><a href="Collection.html#event:unfinalized">unfinalized</a></li><li><a href="Singleton.html#event:cloned">cloned</a></li><li><a href="Singleton.html#event:finalized">finalized</a></li><li><a href="Singleton.html#event:notified">notified</a></li><li><a href="Singleton.html#event:rejected">rejected</a></li><li><a href="Singleton.html#event:resolved">resolved</a></li><li><a href="Singleton.html#event:unfinalized">unfinalized</a></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Thu Aug 20 2015 11:01:28 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

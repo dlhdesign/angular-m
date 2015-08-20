@@ -8,16 +8,19 @@ module.exports = function (grunt) {
   grunt.initConfig({
     builddir: 'build',
     pkg: grunt.file.readJSON('package.json'),
-    buildtag: '-dev-' + grunt.template.today('yyyy-mm-dd'),
     meta: {
       banner: '/**\n' +
         ' * <%= pkg.description %>\n' +
-        ' * @version v<%= pkg.version %><%= buildtag %>\n' +
+        ' * @version v<%= pkg.version %>\n' +
         ' * @link <%= pkg.homepage %>\n' +
         ' * @license MIT License, http://www.opensource.org/licenses/MIT\n' +
         ' */'
     },
-    clean: [ '<%= builddir %>' ],
+    clean: [
+      'doc',
+      '<%= pkg.name %>.js',
+      '<%= pkg.name %>.min.js'
+    ],
     concat: {
       options: {
         banner: '<%= meta.banner %>\n\n'+
@@ -30,7 +33,7 @@ module.exports = function (grunt) {
       },
       build: {
         src: files.src,
-        dest: '<%= builddir %>/<%= pkg.name %>.js'
+        dest: '<%= pkg.name %>.js'
       }
     },
     uglify: {
@@ -39,17 +42,27 @@ module.exports = function (grunt) {
       },
       build: {
         files: {
-          '<%= builddir %>/<%= pkg.name %>.min.js': ['<banner:meta.banner>', '<%= concat.build.dest %>']
+          '<%= pkg.name %>.min.js': ['<banner:meta.banner>', '<%= concat.build.dest %>']
         }
       }
     },
     release: {
-      files: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js'],
-      src: '<%= builddir %>',
-      dest: 'release'
+      options: {
+        npm: false,
+        tag: false,
+        pushTags: false,
+        commit: false,
+        tagMessage: '<%= version %>',
+        additionalFiles: ['bower.json'],
+        afterBump: ['pre-release'],
+        github: {
+          accessTokenVar: 'ANGULARMGITAUTH',
+          repo: 'dlhdesign/angular-m'
+        }
+      }
     },
     jshint: {
-      all: ['Gruntfile.js', 'src/*.js', '<%= builddir %>/<%= pkg.name %>.js'],
+      all: ['Gruntfile.js', 'src/*.js', '<%= pkg.name %>.js'],
       options: {
         eqnull: true
       }
@@ -104,100 +117,51 @@ module.exports = function (grunt) {
         dest: 'CHANGELOG.md'
       }
     },
-    ngdocs: {
-      options: {
-        dest: 'site',
-        styles: [ 'ngdoc_assets/angularM-docs.css' ],
-        html5Mode: false,
-        title: 'Angular-m',
-        startPage: '/api/angular.m'
-      },
-      api: {
-        src: ['src/**/*.js'],
-        title: 'API Reference'
+    jsdoc : {
+      dist : {
+        src: ['src/*.js'],
+        options: {
+          destination: 'doc'
+        }
       }
     }
   });
 
-  grunt.registerTask('integrate', ['build', 'jshint', 'karma:unit']);
-  grunt.registerTask('default', ['build', 'jshint', 'karma:unit']);
-  grunt.registerTask('build', 'Perform a normal build', ['concat', 'uglify']);
-  grunt.registerTask('dist', 'Perform a clean build', ['clean', 'build']);
-  grunt.registerTask('dist-docs', 'Perform a clean build and generate documentation', ['dist', 'ngdocs', 'widedocs']);
-  grunt.registerTask('release', 'Tag and perform a release', ['prepare-release', 'dist', 'perform-release']);
-  grunt.registerTask('dev', 'Run dev server and watch for changes', ['build', 'connect:server', 'karma:background', 'watch']);
-  grunt.registerTask('sample', 'Run connect server with keepalive:true for sample app development', ['connect:sample']);
+  grunt.registerTask('build', 'Perform a normal build', ['clean', 'jsdoc', 'concat', 'uglify']);
+  grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
 
-  grunt.registerTask('widedocs', 'Convert to bootstrap container-fluid', function () {
-    promising(this,
-      system(
-      'sed -i.bak ' + 
-      '-e \'s/class="row"/class="row-fluid"/\' ' + 
-      '-e \'s/icon-cog"><\\/i>/icon-cog"><\\/i>Provider/\' ' + 
-      '-e \'s/role="main" class="container"/role="main" class="container-fluid"/\' site/index.html')
-    );
+  
+  grunt.registerTask('updateVersion', function () {
+    grunt.config('pkg', grunt.file.readJSON('package.json'));
   });
-
-
-  grunt.registerTask('publish-pages', 'Publish a clean build, docs, and sample to github.io', function () {
+  grunt.registerTask('pushToGit', function () {
     promising(this,
-      ensureCleanMaster().then(function () {
-        shjs.rm('-rf', 'build');
+      system('git add -A')
+      .then(function () {
+        return system('git commit -m \'pre-release commit for ' + grunt.config('pkg.version') + '\'');
+      })
+      .then(function () {
+        return system('git push origin master');
+      })
+      .then(function () {
         return system('git checkout gh-pages');
-      }).then(function () {
+      })
+      .then(function () {
         return system('git merge master');
-      }).then(function () {
-        return system('grunt dist-docs');
-      }).then(function () {
-        return system('git commit -a -m \'Automatic gh-pages build\'');
-      }).then(function () {
-        return system('git checkout master');
       })
-    );
-  });
-
-  grunt.registerTask('push-pages', 'Push published pages', function () {
-    promising(this,
-      ensureCleanMaster().then(function () {
-        shjs.rm('-rf', 'build');
-        return system('git checkout gh-pages');
-      }).then(function () {
+      .then(function () {
+        return system('git commit -m \'Automatic gh-pages build\'');
+      })
+      .then(function () {
         return system('git push origin gh-pages');
-      }).then(function () {
+      })
+      .then(function () {
         return system('git checkout master');
       })
     );
   });
 
-  grunt.registerTask('prepare-release', function () {
-    var bower = grunt.file.readJSON('bower.json'),
-        version = bower.version;
-    if (version != grunt.config('pkg.version')) throw 'Version mismatch in bower.json';
-
-    promising(this,
-      ensureCleanMaster().then(function () {
-        return exec('git tag -l \'' + version + '\'');
-      }).then(function (result) {
-        if (result.stdout.trim() !== '') throw 'Tag \'' + version + '\' already exists';
-        grunt.config('buildtag', '');
-        grunt.config('builddir', 'release');
-      })
-    );
-  });
-
-  grunt.registerTask('perform-release', function () {
-    grunt.task.requires([ 'prepare-release', 'dist' ]);
-
-    var version = grunt.config('pkg.version'), releasedir = grunt.config('builddir');
-    promising(this,
-      system('git add \'' + releasedir + '\'').then(function () {
-        return system('git commit -m \'release ' + version + '\'');
-      }).then(function () {
-        return system('git tag \'' + version + '\'');
-      })
-    );
-  });
-
+  grunt.registerTask('pre-release', ['updateVersion', 'build', 'pushToGit']);
 
   // Helpers for custom tasks, mainly around promises / exec
   var exec = require('faithful-exec'), shjs = require('shelljs');
