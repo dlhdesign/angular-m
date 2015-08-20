@@ -16,7 +16,11 @@ module.exports = function (grunt) {
         ' * @license MIT License, http://www.opensource.org/licenses/MIT\n' +
         ' */'
     },
-    clean: ['<%= pkg.name %>.js', '<%= pkg.name %>.min.js'],
+    clean: [
+      'doc',
+      '<%= pkg.name %>.js',
+      '<%= pkg.name %>.min.js'
+    ],
     concat: {
       options: {
         banner: '<%= meta.banner %>\n\n'+
@@ -113,22 +117,17 @@ module.exports = function (grunt) {
         dest: 'CHANGELOG.md'
       }
     },
-    ngdocs: {
-      options: {
-        dest: 'site',
-        styles: [ 'ngdoc_assets/angularM-docs.css' ],
-        html5Mode: false,
-        title: 'Angular-m',
-        startPage: '/api/angular.m'
-      },
-      api: {
-        src: ['src/**/*.js'],
-        title: 'API Reference'
+    jsdoc : {
+      dist : {
+        src: ['src/*.js'],
+        options: {
+          destination: 'doc'
+        }
       }
     }
   });
 
-  grunt.registerTask('build', 'Perform a normal build', ['clean', 'concat', 'uglify']);
+  grunt.registerTask('build', 'Perform a normal build', ['clean', 'jsdoc', 'concat', 'uglify']);
   grunt.registerTask('default', 'Run dev server and watch for changes', ['build', 'connect:server', 'watch']);
 
   

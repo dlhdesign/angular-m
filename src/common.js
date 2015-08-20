@@ -32,12 +32,6 @@ function merge(dst) {
   return dst;
 }
 
-/**
- * IE8-safe wrapper for `Object.keys()`.
- *
- * @param {Object} object A JavaScript object.
- * @return {Array} Returns the keys of the object as an array.
- */
 function objectKeys(object) {
   if (Object.keys) {
     return Object.keys(object);
@@ -50,13 +44,6 @@ function objectKeys(object) {
   return result;
 }
 
-/**
- * IE8-safe wrapper for `Array.prototype.indexOf()`.
- *
- * @param {Array} array A JavaScript array.
- * @param {*} value A value to search the array for.
- * @return {Number} Returns the array index value of `value`, or `-1` if not present.
- */
 function indexOf(array, value) {
   var len = array.length >>> 0,
       from = Number(arguments[2]) || 0;
@@ -121,29 +108,23 @@ function map(collection, callback) {
 }
 
 /**
- * @ngdoc overview
- * @name angular.m
- *
- * @description
- * # angular.m
- * 
- * *You'll need to include this module as a dependency within your angular app.*
- * 
- * <pre>
- * <!doctype html>
- * <html ng-app="myApp">
- * <head>
- *   <script src="js/angular.js"></script>
- *   <!-- Include the angular-m script -->
- *   <script src="js/angular-m.min.js"></script>
- *   <script>
- *     // ...and add 'angular-m' as a dependency
- *     var myApp = angular.module('myApp', ['angular-m']);
- *   </script>
- * </head>
- * <body>
- * </body>
- * </html>
- * </pre>
- */
+You'll need to include this module as a dependency within your angular app.*
+
+<pre>
+<!doctype html>
+<html ng-app="myApp">
+<head>
+  <script src="js/angular.js"></script>
+  <!-- Include the angular-m script -->
+  <script src="js/angular-m.min.js"></script>
+  <script>
+    // ...and add 'angular-m' as a dependency
+    var myApp = angular.module('myApp', ['angular-m']);
+  </script>
+</head>
+<body>
+</body>
+</html>
+</pre>
+*/
 angular.module('angular-m', []);

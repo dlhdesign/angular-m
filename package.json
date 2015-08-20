@@ -1,7 +1,7 @@
 {
   "name": "angular-m",
   "description": "Angular-based model library for use in MVC framework design",
-  "version": "0.4.12",
+  "version": "0.4.13",
   "homepage": "https://github.com/dlhdesign/angular-m",
   "author": "David Hutchings",
   "repository": {
@@ -33,6 +33,7 @@
     "grunt-contrib-uglify": "~0.4.0",
     "grunt-contrib-watch": "~0.5.3",
     "grunt-conventional-changelog": "~1.1.0",
+    "grunt-jsdoc": "^0.6.7",
     "grunt-karma": "~0.6.2",
     "grunt-ngdocs": "~0.2.5",
     "grunt-release": "^0.13.0",

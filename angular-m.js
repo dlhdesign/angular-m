@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.12
+ * @version v0.4.13
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -45,12 +45,6 @@ function merge(dst) {
   return dst;
 }
 
-/**
- * IE8-safe wrapper for `Object.keys()`.
- *
- * @param {Object} object A JavaScript object.
- * @return {Array} Returns the keys of the object as an array.
- */
 function objectKeys(object) {
   if (Object.keys) {
     return Object.keys(object);
@@ -63,13 +57,6 @@ function objectKeys(object) {
   return result;
 }
 
-/**
- * IE8-safe wrapper for `Array.prototype.indexOf()`.
- *
- * @param {Array} array A JavaScript array.
- * @param {*} value A value to search the array for.
- * @return {Number} Returns the array index value of `value`, or `-1` if not present.
- */
 function indexOf(array, value) {
   var len = array.length >>> 0,
       from = Number(arguments[2]) || 0;
@@ -134,31 +121,25 @@ function map(collection, callback) {
 }
 
 /**
- * @ngdoc overview
- * @name angular.m
- *
- * @description
- * # angular.m
- * 
- * *You'll need to include this module as a dependency within your angular app.*
- * 
- * <pre>
- * <!doctype html>
- * <html ng-app="myApp">
- * <head>
- *   <script src="js/angular.js"></script>
- *   <!-- Include the angular-m script -->
- *   <script src="js/angular-m.min.js"></script>
- *   <script>
- *     // ...and add 'angular-m' as a dependency
- *     var myApp = angular.module('myApp', ['angular-m']);
- *   </script>
- * </head>
- * <body>
- * </body>
- * </html>
- * </pre>
- */
+You'll need to include this module as a dependency within your angular app.*
+
+<pre>
+<!doctype html>
+<html ng-app="myApp">
+<head>
+  <script src="js/angular.js"></script>
+  <!-- Include the angular-m script -->
+  <script src="js/angular-m.min.js"></script>
+  <script>
+    // ...and add 'angular-m' as a dependency
+    var myApp = angular.module('myApp', ['angular-m']);
+  </script>
+</head>
+<body>
+</body>
+</html>
+</pre>
+*/
 angular.module('angular-m', []);
 
 function HTTPService($rootScope, $http, $q) {
@@ -320,12 +301,7 @@ function BaseFactory() {
 	/**
   Base model that all other models will inherit from. Provides Promises/A functionality as well as publish/subscribe functionality.
   @constructs Base
-  @prop {Array}   $$arguments   - The initial arguments passed into the constructor
-  @prop {Array}   $$cbQueue     - Array of callbacks awaiting finalization
-  @prop {Object}  $$listeners   - Object storing event listeners
   @prop {Object}  $errors       - Contains details about any error states on the instance
-  @prop {Boolean} $$resolved=undefined    - Whether the instance has been resolved (success) or not
-  @prop {Boolean} $$rejected=undefined    - Whether the instance has been rejected (fail) or not
   */
   function Base() {}
 
@@ -391,7 +367,6 @@ function BaseFactory() {
         };
         executeQueue.call(self, idx, data);
         self.trigger('resolved', data);
-        self.trigger('finalized', data);
       }
       return self;
     },
@@ -413,7 +388,6 @@ function BaseFactory() {
         };
         executeQueue.call(self, idx, data);
         self.trigger('rejected', data);
-        self.trigger('finalized', data);
       }
       return self;
     },
@@ -979,7 +953,7 @@ function SingletonFactory(Base, REGEX) {
             }
             if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
-              setError( self, fieldConfig.methodName, 'validator', !ret );
+              setError(self, fieldConfig.methodName, 'validator', !ret);
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             if (ret === false) {
@@ -995,7 +969,7 @@ function SingletonFactory(Base, REGEX) {
               }
             }
             self.$invalid = !self.$valid;
-            self.trigger( 'validated.' + fieldConfig.methodName, ret );
+            self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
         }); 
@@ -1112,7 +1086,7 @@ function SingletonFactory(Base, REGEX) {
         self.each(function (fieldConfig) {
           self[ fieldConfig.methodName ].valid();
         });
-        self.trigger( 'validated', self.$valid );
+        self.trigger('validated', self.$valid);
         return self.$valid;
       },
       /**
@@ -1141,7 +1115,7 @@ function SingletonFactory(Base, REGEX) {
           self.$pristine = true;
           self.$$data = data || self.get();
           self.$$setData = {};
-          self.trigger('finalize', data);
+          self.trigger('finalized', data);
         }
         return self;
       },
@@ -1242,6 +1216,7 @@ function SingletonFactory(Base, REGEX) {
               delete self.$errors.read;
               self.finalize(data);
               self.resolve(idx);
+              self.trigger('read', data);
             },
             function (data) {
               self.$errors.read = data;
@@ -1307,6 +1282,7 @@ function SingletonFactory(Base, REGEX) {
               delete self.$errors.update;
               self.finalize(data);
               self.resolve(idx);
+              self.trigger('updated', data);
             },
             function (data) {
               self.$errors.update = data;
@@ -1376,6 +1352,7 @@ function SingletonFactory(Base, REGEX) {
               delete self.$errors.change;
               self.finalize(data);
               self.resolve(idx);
+              self.trigger('changed', data);
             },
             function (data) {
               self.$errors.change = data;
@@ -1428,6 +1405,7 @@ function SingletonFactory(Base, REGEX) {
               delete self.$errors.upload;
               self.finalize(data);
               self.resolve(idx);
+              self.trigger('uploaded', data);
             },
             function (data) {
               self.$errors.upload = data;
@@ -1493,6 +1471,7 @@ function SingletonFactory(Base, REGEX) {
               delete self.$errors.create;
               self.finalize(data);
               self.resolve(idx);
+              self.trigger('created', data);
             },
             function (data) {
               self.$errors.create = data;
@@ -1545,6 +1524,7 @@ function SingletonFactory(Base, REGEX) {
               delete self.$errors.delete;
               self.finalize(data || {});
               self.resolve(idx);
+              self.trigger('deleted', data);
             },
             function (data) {
               self.$errors.delete = data;
