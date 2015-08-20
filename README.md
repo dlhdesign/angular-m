@@ -2,4 +2,4 @@
 Angular-based model library for use in MVC framework design.
 
 ## Documentation
-http://dlhdesign.github.io/angular-m/site
+http://dlhdesign.github.io/angular-m/doc
