@@ -33,11 +33,13 @@ function merge(dst) {
 }
 
 function objectKeys(object) {
+  var result = [];
+  if (m_isObject(object) === false) {
+    return result;
+  }
   if (Object.keys) {
     return Object.keys(object);
   }
-  var result = [];
-
   m_forEach(object, function(val, key) {
     result.push(key);
   });
