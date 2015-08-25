@@ -3,10 +3,6 @@ function SingletonFactory(Base, REGEX) {
   Base model that represents a single object.
   @class Singleton
   @extends Base
-  @prop {object}  $$data        - Current data for the instance
-  @prop {object}  $$setData     - Pending data for the instance
-  @prop {object}  $$merged      - Cache of $$data + $$setData
-  @prop {array}   $$fieldConfig - Cache of field configurations
   @prop {boolean} $dirty=false  - If instance has been modified since initilization or the last save, equals `true`; else `false`
   @prop {boolean} $busy         - If instance is currently in the middle of an API call, equals `true`; else `false`
   @prop {boolean} $loaded       - If instance has been loaded or instantiated with data, equals `true`; else `false`

@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.15
+ * @version v0.4.16
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -46,11 +46,13 @@ function merge(dst) {
 }
 
 function objectKeys(object) {
+  var result = [];
+  if (m_isObject(object) === false) {
+    return result;
+  }
   if (Object.keys) {
     return Object.keys(object);
   }
-  var result = [];
-
   m_forEach(object, function(val, key) {
     result.push(key);
   });
@@ -666,10 +668,6 @@ function SingletonFactory(Base, REGEX) {
   Base model that represents a single object.
   @class Singleton
   @extends Base
-  @prop {object}  $$data        - Current data for the instance
-  @prop {object}  $$setData     - Pending data for the instance
-  @prop {object}  $$merged      - Cache of $$data + $$setData
-  @prop {array}   $$fieldConfig - Cache of field configurations
   @prop {boolean} $dirty=false  - If instance has been modified since initilization or the last save, equals `true`; else `false`
   @prop {boolean} $busy         - If instance is currently in the middle of an API call, equals `true`; else `false`
   @prop {boolean} $loaded       - If instance has been loaded or instantiated with data, equals `true`; else `false`
@@ -1556,10 +1554,6 @@ function CollectionFactory(Base, Singleton) {
   Base model that represents multiple objects.
   @class Collection
   @extends Base
-  @prop {array}   $$data         - Current raw data for the instance
-  @prop {array}   $$addData      - Pending data to add to the instance
-  @prop {array}   $$modeled      - Cache of $$data that has been converted to be the child model
-  @prop {array}   $$origData     - Pre-filter/sort data (used to return to unsorted/filtered state)
   @prop {number}  length         - Number of known items in the instance
   @prop {boolean} $busy          - If instance is currently in the middle of an API call, equals `true`; else `false`
   @prop {boolean} $loaded        - If instance has been loaded or instantiated with data, equals `true`; else `false`
