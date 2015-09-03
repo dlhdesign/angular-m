@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.16
+ * @version v0.4.17
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -632,6 +632,9 @@ function BaseFactory() {
       properties.$type = 'Class';
     }
 
+    if (m_isFunction(proto.$preExtend)) {
+      properties = proto.$preExtend(properties);
+    }
     for (key in properties) {
       if (properties.hasOwnProperty(key)) {
         if (m_isFunction(properties[ key ]) && m_isFunction(_super[ key ]) && superPattern.test(properties[ key ])) {
@@ -836,6 +839,17 @@ function SingletonFactory(Base, REGEX) {
     /** @lends Singleton.prototype */
     {
       $type: 'Singleton',
+      $preExtend: function (properties) {
+        if ( m_isObject(this.fields) ) {
+          properties.fields = merge( {}, this.fields, properties.fields );
+          m_forEach(properties.fields, function (value, key) {
+            if ( value === false ) {
+              delete properties.fields[key];
+            }
+          });
+        }
+        return properties;
+      },
       /**
       Instantiates the Singleton by setting up all the field getter/setters.
       @override
@@ -869,6 +883,9 @@ function SingletonFactory(Base, REGEX) {
             }
             if ( fieldConfig.getter ) {
               ret = fieldConfig.getter.call(self, fieldConfig);
+              if ( ret === undefined ) {
+                return ret;
+              }
             } else {
               field = field.split( '.' );
               ret = self.get()[ field.shift() ];

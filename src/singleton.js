@@ -171,6 +171,17 @@ function SingletonFactory(Base, REGEX) {
     /** @lends Singleton.prototype */
     {
       $type: 'Singleton',
+      $preExtend: function (properties) {
+        if ( m_isObject(this.fields) ) {
+          properties.fields = merge( {}, this.fields, properties.fields );
+          m_forEach(properties.fields, function (value, key) {
+            if ( value === false ) {
+              delete properties.fields[key];
+            }
+          });
+        }
+        return properties;
+      },
       /**
       Instantiates the Singleton by setting up all the field getter/setters.
       @override
@@ -204,6 +215,9 @@ function SingletonFactory(Base, REGEX) {
             }
             if ( fieldConfig.getter ) {
               ret = fieldConfig.getter.call(self, fieldConfig);
+              if ( ret === undefined ) {
+                return ret;
+              }
             } else {
               field = field.split( '.' );
               ret = self.get()[ field.shift() ];

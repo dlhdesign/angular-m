@@ -383,6 +383,9 @@ function BaseFactory() {
       properties.$type = 'Class';
     }
 
+    if (m_isFunction(proto.$preExtend)) {
+      properties = proto.$preExtend(properties);
+    }
     for (key in properties) {
       if (properties.hasOwnProperty(key)) {
         if (m_isFunction(properties[ key ]) && m_isFunction(_super[ key ]) && superPattern.test(properties[ key ])) {
