@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.4.17
+ * @version v0.4.18
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1802,7 +1802,6 @@ function CollectionFactory(Base, Singleton) {
         if (self.$$data.length > 0) {
           if (m_isFunction(_filter) === true) {
             self.$$filter = _filter;
-            self.select(false);
             self.$$origData = self.$$origData || m_copy(self.$$data);
             self.$$data = filter(self.get(), _filter);
             self.length = self.$$data.length;
@@ -1810,7 +1809,6 @@ function CollectionFactory(Base, Singleton) {
           } else if (m_isObject(_filter) === true) {
             if (keys(_filter).length > 0) {
               self.$$filter = _filter;
-              self.select(false);
               self.$$origData = self.$$origData || m_copy(self.$$data);
               filter(self.get(), function (val) {
                 var ret = true;
@@ -1821,8 +1819,13 @@ function CollectionFactory(Base, Singleton) {
                   } else {
                     value = val[k];
                   }
-                  ret = ret && value === v;
+                  if (m_isArray(value) === true) {
+                    ret = ret && value.indexOf(v) > -1;
+                  } else {
+                    ret = ret && m_equals(value, v);
+                  }
                   if (ret === false) {
+                    val.select(false);
                     return ret;
                   }
                 });
