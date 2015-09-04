@@ -162,14 +162,14 @@ function CollectionFactory(Base, Singleton) {
       Method to retrieve specific fields from all the current data for the instance.
       @returns {Object[]}
       */
-      pluck: function (field) {
+      pluck: function (fields) {
         var self = this,
             ret = new Array(self.length);
-        if (m_isArray(field) === false) {
-          field = [field];
+        if (m_isArray(fields) === false) {
+          fields = [fields];
         }
         self.each(function (child, idx) {
-          m_forEach(field, function (f) {
+          m_forEach(fields, function (f) {
             if (m_isFunction(child[f])) {
               ret[idx] = ret[idx] || {};
               ret[idx][f] = child[f]();
