@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v0.5.0
+ * @version v0.5.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1725,6 +1725,26 @@ function CollectionFactory(Base, Singleton) {
           self.$$modeled[i] = ret;
         });
         return self.$$modeled;
+      },
+      /**
+      Method to retrieve specific fields from all the current data for the instance.
+      @returns {Object[]}
+      */
+      pluck: function (field) {
+        var self = this,
+            ret = new Array(self.length);
+        if (m_isArray(field) === false) {
+          field = [field];
+        }
+        self.each(function (child, idx) {
+          m_forEach(field, function (f) {
+            if (m_isFunction(child[f])) {
+              ret[idx] = ret[idx] || {};
+              ret[idx][f] = child[f]();
+            }
+          });
+        });
+        return ret;
       },
       /**
       Method to set the data for the instance. Also sets `this.$loaded = true`. Will re-apply any sorting/filtering after setting the data.

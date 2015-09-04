@@ -159,6 +159,26 @@ function CollectionFactory(Base, Singleton) {
         return self.$$modeled;
       },
       /**
+      Method to retrieve specific fields from all the current data for the instance.
+      @returns {Object[]}
+      */
+      pluck: function (field) {
+        var self = this,
+            ret = new Array(self.length);
+        if (m_isArray(field) === false) {
+          field = [field];
+        }
+        self.each(function (child, idx) {
+          m_forEach(field, function (f) {
+            if (m_isFunction(child[f])) {
+              ret[idx] = ret[idx] || {};
+              ret[idx][f] = child[f]();
+            }
+          });
+        });
+        return ret;
+      },
+      /**
       Method to set the data for the instance. Also sets `this.$loaded = true`. Will re-apply any sorting/filtering after setting the data.
       @arg {array} val - The data to set on the instance
       @returns {Collection} `this`
