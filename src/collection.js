@@ -259,7 +259,7 @@ function CollectionFactory(Base, Singleton) {
             self.length = self.$$data.length;
             self.$$modeled = null;
           } else if (m_isObject(_filter) === true) {
-            if (keys(_filter).length > 0) {
+            if (objectKeys(_filter).length > 0) {
               self.$$filter = _filter;
               self.$$origData = self.$$origData || m_copy(self.$$data);
               filter(self.get(), function (val) {
@@ -465,8 +465,8 @@ function CollectionFactory(Base, Singleton) {
         self.$loaded = true;
         delete self.$busy;
         return self._super.apply(self, arguments);
-      },    
-      
+      },
+
       /**
       Re-runs the last `read` call or, if never called, calls `read`.
       @returns {Collection} `this`
@@ -596,7 +596,7 @@ function CollectionFactory(Base, Singleton) {
       },
     }
   );
- 
+
   /**
    * Return the constructor function
    */
