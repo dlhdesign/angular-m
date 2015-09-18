@@ -257,7 +257,7 @@ function SingletonFactory(Base, REGEX) {
             }
             field = field.split( '.' );
             target = self.$$setData;
-            while ( field.length > 1 ) {
+            while ( field.length > 0 ) {
               f = field.shift();
               target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
             }
