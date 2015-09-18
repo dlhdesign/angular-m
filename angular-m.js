@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.0.1
+ * @version v1.0.2
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
