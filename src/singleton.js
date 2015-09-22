@@ -274,7 +274,7 @@ function SingletonFactory(Base, REGEX) {
           @prop {object} $errors - Contains details about any error states on the field
           @prop {object} $config - Contains the configuration for this field
           @prop {SingletonFieldValidator} valid - Validates the field's value against the field definition
-          @returns {Singleton} `this` 
+          @returns {Singleton} `this`
           */
           /**
           @typedef SingletonFieldValidator
@@ -319,7 +319,7 @@ function SingletonFactory(Base, REGEX) {
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
-        }); 
+        });
       },
       /**
       Method to retrieve all the current and pending data ($$data extended by $$setData) for the instance.
@@ -503,7 +503,7 @@ function SingletonFactory(Base, REGEX) {
         self.clearCache();
         return self._super.apply(self, arguments);
       },
-      
+
       /**
       Re-runs the last `read` call or, if never called, calls `read`.
       @returns {Singleton} `this`
@@ -682,7 +682,7 @@ function SingletonFactory(Base, REGEX) {
               if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
                 fields = pick(self.$$fieldConfig, function (fieldConfig) {
                   if (fieldConfig.updateable !== false) {
-                    return fieldConfig.key;
+                    return true;
                   }
                 }, self);
                 data = pick(self.$$setData, fields);
@@ -803,7 +803,7 @@ function SingletonFactory(Base, REGEX) {
             if (self.$dirty === true) {
               data = self.pick(function (fieldConfig) {
                 if (fieldConfig.createable !== false) {
-                  return fieldConfig.key;
+                  return true;
                 }
               });
             }
