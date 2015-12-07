@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.0.1
+ * @version v1.0.4
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -693,9 +693,13 @@ function SingletonFactory(Base, REGEX) {
     });
   }
   function label(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1).replace(/_([a-z])/g, function (v, l) {
-      return ' ' + l.toUpperCase();
-    });
+    return str.charAt(0).toUpperCase() + str.slice(1)
+      .replace(/[a-z]([A-Z])/g, function (v, l, os) { // Handle "camelCase" => "Camel Case"
+        return str.charAt(os + 1) + ' ' + l.toUpperCase();
+      })
+      .replace(/_([a-z])/g, function (v, l) { // Handle "underscore_case" => "Underscore Case"
+        return ' ' + l.toUpperCase();
+      });
   }
   function setError(field, key, value) {
     /*jshint validthis:true */
@@ -932,7 +936,7 @@ function SingletonFactory(Base, REGEX) {
             if ( m_isFunction(fieldConfig.mutateSet) === true ) {
               val = fieldConfig.mutateSet.call(self, val, fieldConfig);
             }
-            target[field] = val;
+            target[ field[ 0 ] ] = val;
             return self;
           }
           /**
