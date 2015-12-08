@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.0.6
+ * @version v1.0.7
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -929,7 +929,7 @@ function SingletonFactory(Base, REGEX) {
             }
             field = field.split( '.' );
             target = self.$$setData;
-            while ( field.length > 0 ) {
+            while ( field.length > 1 ) {
               f = field.shift();
               target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
             }

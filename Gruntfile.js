@@ -143,21 +143,21 @@ module.exports = function (grunt) {
       .then(function () {
         return system('git push origin master');
       })
-      .then(function () {
-        return system('git checkout gh-pages');
-      })
-      .then(function () {
-        return system('git merge master');
-      })
-      .then(function () {
-        return system('git commit -m \'Automatic gh-pages build\'');
-      })
-      .then(function () {
-        return system('git push origin gh-pages');
-      })
-      .then(function () {
-        return system('git checkout master');
-      })
+      // .then(function () {
+      //   return system('git checkout gh-pages');
+      // })
+      // .then(function () {
+      //   return system('git merge master');
+      // })
+      // .then(function () {
+      //   return system('git commit -m \'Automatic gh-pages build\'');
+      // })
+      // .then(function () {
+      //   return system('git push origin gh-pages');
+      // })
+      // .then(function () {
+      //   return system('git checkout master');
+      // })
     );
   });
 
