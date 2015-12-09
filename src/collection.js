@@ -453,19 +453,7 @@ function CollectionFactory(Base, Singleton) {
         ret.$allSelected = self.$allSelected;
         ret.$noneSelected = self.$noneSelected;
         return ret;
-      },
-      resolve: function() {
-        var self = this;
-        self.$loaded = true;
-        delete self.$busy;
-        return self._super.apply(self, arguments);
-      },
-      reject: function() {
-        var self = this;
-        self.$loaded = true;
-        delete self.$busy;
-        return self._super.apply(self, arguments);
-      },    
+      },   
       
       /**
       Re-runs the last `read` call or, if never called, calls `read`.

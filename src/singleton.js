@@ -250,9 +250,13 @@ function SingletonFactory(Base, REGEX) {
               throw new Error(fieldConfig.methodName + ' is read-only.' );
             }
             self.$$merged = false;
+            self.$loaded = true;
             self.$dirty = true;
             self.$pristine = false;
-            self.$loaded = true;
+
+            this.$dirty = true;
+            this.$pristine = false;
+
             fieldConfig.$$getterCacheSet = false;
             delete fieldConfig.$$getterCache;
             if ( fieldConfig.setter ) {
@@ -308,10 +312,10 @@ function SingletonFactory(Base, REGEX) {
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             if (ret === false) {
-              self.$valid = ret;
-            } else if (self.$valid === false) {
+              this.$valid = ret;
+            } else if (this.$valid === false) {
               // Set $valid state to null to prevent endless loop if first field is valid
-              self.$valid = null;
+              this.$valid = null;
               for(; i<self.$$fieldConfig.length; i++) {
                 self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
                 if (self.$valid === false) {
@@ -319,7 +323,7 @@ function SingletonFactory(Base, REGEX) {
                 }
               }
             }
-            self.$invalid = !self.$valid;
+            this.$invalid = !ret;
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
@@ -486,24 +490,20 @@ function SingletonFactory(Base, REGEX) {
         return ret;
       },
       /**
-      Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
+      Sets `this.$loaded = true`, `this.$success = true`, `this.$failed = false`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
       resolve: function () {
         var self = this;
-        self.$loaded = true;
-        delete self.$busy;
         self.clearCache();
         return self._super.apply(self, arguments);
       },
       /**
-      Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
+      Sets `this.$loaded = true`, `this.$success = false`, `this.$failed = true`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
       reject: function () {
         var self = this;
-        self.$loaded = true;
-        delete self.$busy;
         self.clearCache();
         return self._super.apply(self, arguments);
       },
