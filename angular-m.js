@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.0.8
+ * @version v1.0.9
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -352,7 +352,7 @@ function BaseFactory() {
       return false;
     },
     /**
-    Marks the promie thread as "resolved" (successfully complete).
+    Marks the promie thread as "resolved" (successfully complete). Sets `this.$loaded = true`, `this.$success = true`, `this.$failed = false`, and deletes `this.$busy`.
     @arg [idx=this.$$cbQueueIdx] - Promise thread to resolve
     @arg [data] - Data related to the resolution
     @fires Base#resolved
@@ -362,6 +362,10 @@ function BaseFactory() {
     resolve: function (idx, data) {
       var self = this;
       idx = idx || self.$$cbQueueIdx;
+      self.$loaded = true;
+      self.$success = true;
+      self.$failed = false;
+      delete self.$busy;
       if (!self.isFinal(idx)) {
         self.$$finals[idx] = {
           resolved: true,
@@ -373,7 +377,7 @@ function BaseFactory() {
       return self;
     },
     /**
-    Marks the promise thread as "rejected" (unsuccessfully complete).
+    Marks the promise thread as "rejected" (unsuccessfully complete). Sets `this.$loaded = true`, `this.$success = false`, `this.$failed = true`, and deletes `this.$busy`.
     @arg [idx=this.$$cbQueueIdx] - Promise thread to reject
     @arg [data] - Data related to the rejection
     @fires Base#rejected
@@ -383,6 +387,10 @@ function BaseFactory() {
     reject: function (idx, data) {
       var self = this;
       idx = idx || self.$$cbQueueIdx;
+      self.$loaded = true;
+      self.$success = false;
+      self.$failed = true;
+      delete self.$busy;
       if (!self.isFinal(idx)) {
         self.$$finals[idx] = {
           rejected: true,
@@ -410,13 +418,17 @@ function BaseFactory() {
       return self;
     },
     /**
-    "Resets" the Promise state on the instance by incrementing the current promise thread index.
+    "Resets" the Promise state on the instance by incrementing the current promise thread index. Sets `this.$loaded = false` and deletes `this.$success` and `this.$failed`.
     @fires Base#unfinalized
     @returns {number} `idx` New promise thread index
     */
     unfinalize: function () {
-      this.trigger('unfinalized');
-      return ++this.$$cbQueueIdx;
+      var self = this;
+      self.$loaded = false;
+      delete self.$success;
+      delete self.$failed;
+      self.trigger('unfinalized');
+      return ++self.$$cbQueueIdx;
     },
     /**
     Attaches success/fail/progress callbacks to the current promise thread, which will trigger upon the next resolve/reject call respectively or, if the current promise thread is already final, immediately.
@@ -918,9 +930,13 @@ function SingletonFactory(Base, REGEX) {
               throw new Error(fieldConfig.methodName + ' is read-only.' );
             }
             self.$$merged = false;
+            self.$loaded = true;
             self.$dirty = true;
             self.$pristine = false;
-            self.$loaded = true;
+
+            this.$dirty = true;
+            this.$pristine = false;
+
             fieldConfig.$$getterCacheSet = false;
             delete fieldConfig.$$getterCache;
             if ( fieldConfig.setter ) {
@@ -976,10 +992,10 @@ function SingletonFactory(Base, REGEX) {
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             if (ret === false) {
-              self.$valid = ret;
-            } else if (self.$valid === false) {
+              this.$valid = ret;
+            } else if (this.$valid === false) {
               // Set $valid state to null to prevent endless loop if first field is valid
-              self.$valid = null;
+              this.$valid = null;
               for(; i<self.$$fieldConfig.length; i++) {
                 self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
                 if (self.$valid === false) {
@@ -987,7 +1003,7 @@ function SingletonFactory(Base, REGEX) {
                 }
               }
             }
-            self.$invalid = !self.$valid;
+            this.$invalid = !ret;
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
@@ -1154,24 +1170,20 @@ function SingletonFactory(Base, REGEX) {
         return ret;
       },
       /**
-      Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
+      Sets `this.$loaded = true`, `this.$success = true`, `this.$failed = false`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
       resolve: function () {
         var self = this;
-        self.$loaded = true;
-        delete self.$busy;
         self.clearCache();
         return self._super.apply(self, arguments);
       },
       /**
-      Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
+      Sets `this.$loaded = true`, `this.$success = false`, `this.$failed = true`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
       reject: function () {
         var self = this;
-        self.$loaded = true;
-        delete self.$busy;
         self.clearCache();
         return self._super.apply(self, arguments);
       },
@@ -2019,19 +2031,7 @@ function CollectionFactory(Base, Singleton) {
         ret.$allSelected = self.$allSelected;
         ret.$noneSelected = self.$noneSelected;
         return ret;
-      },
-      resolve: function() {
-        var self = this;
-        self.$loaded = true;
-        delete self.$busy;
-        return self._super.apply(self, arguments);
-      },
-      reject: function() {
-        var self = this;
-        self.$loaded = true;
-        delete self.$busy;
-        return self._super.apply(self, arguments);
-      },    
+      },   
       
       /**
       Re-runs the last `read` call or, if never called, calls `read`.
