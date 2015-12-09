@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.0
+ * @version v1.1.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -991,7 +991,7 @@ function SingletonFactory(Base, REGEX) {
             }
             if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
-              setError(self, fieldConfig.methodName, 'validator', !ret);
+              setError.call(self, fieldConfig.methodName, 'validator', !ret);
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             if (this.$valid !== ret && ret === true && !forBatch) {
