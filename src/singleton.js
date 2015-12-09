@@ -8,7 +8,9 @@ function SingletonFactory(Base, REGEX) {
   @prop {boolean} $loaded       - If instance has been loaded or instantiated with data, equals `true`; else `false`
   @prop {string}  $type         - The type of model the instance is
   */
-  var Singleton = function () {};
+  var Singleton = function () {},
+
+      undefinedValue = function() {};
 
   /**
   Singleton field cofiguration definition.
@@ -300,10 +302,10 @@ function SingletonFactory(Base, REGEX) {
           self[ fieldConfig.methodName ].$errors = {};
           self[ fieldConfig.methodName ].$parent = self;
           self[ fieldConfig.methodName ].$config = fieldConfig;
-          self[ fieldConfig.methodName ].valid = function ( val ) {
+          self[ fieldConfig.methodName ].valid = function ( val, forBatch ) {
             var ret = true,
                 i = 0;
-            if ( arguments.length === 0 ) {
+            if ( val === undefinedValue ) {
               val = self[ fieldConfig.methodName ]();
             }
             if ( m_isFunction( fieldConfig.validator ) ) {
@@ -311,18 +313,18 @@ function SingletonFactory(Base, REGEX) {
               setError(self, fieldConfig.methodName, 'validator', !ret);
             }
             ret = validate.call(self, val, fieldConfig) && ret;
-            if (ret === false) {
-              this.$valid = ret;
-            } else if (this.$valid === false) {
-              // Set $valid state to null to prevent endless loop if first field is valid
-              this.$valid = null;
+            if (this.$valid !== ret && ret === true && !forBatch) {
               for(; i<self.$$fieldConfig.length; i++) {
-                self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
-                if (self.$valid === false) {
-                  break;
+                if (self.$$fieldConfig[i].methodName !== fieldConfig.methodName) {
+                  self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
+                  self.$invalid = !self.$valid;
+                  if (self.$valid === false) {
+                    break;
+                  }
                 }
               }
             }
+            this.$valid = ret;
             this.$invalid = !ret;
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
@@ -438,9 +440,11 @@ function SingletonFactory(Base, REGEX) {
       */
       validate: function () {
         var self = this;
+        self.$valid = true;
         self.each(function (fieldConfig) {
-          self[ fieldConfig.methodName ].valid();
+          self.$valid = self[ fieldConfig.methodName ].valid(undefinedValue, true) && self.$valid;
         });
+        self.$invalid = !self.$valid;
         self.trigger('validated', self.$valid);
         return self.$valid;
       },
