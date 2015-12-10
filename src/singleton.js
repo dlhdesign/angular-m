@@ -63,6 +63,24 @@ function SingletonFactory(Base, REGEX) {
       }
     }
 
+    m_forEach(fieldConfig.equalsTargets, function ( target ) {
+      var valid;
+      if ( m_isFunction(self[target]) && m_equals(self[target](), val) ) {
+        setError.call(self, target, 'equals', false );
+        m_forEach(self[target].$errors, function ( value ) {
+          valid = value && valid;
+        })
+        self[target].$valid = !valid;
+        self[target].$invalid = valid;
+        self.trigger('validated.' + target, false);
+      } else {
+        setError.call(self, target, 'equals', true );
+        self[target].$valid = false;
+        self[target].$invalid = true;
+        self.trigger('validated.' + target, true);
+      }
+    });
+
     if ( m_isUndefined(val) === false && m_isNull(val) === false ) {
     // START DEFINED-ONLY CHECKS
 
@@ -194,7 +212,9 @@ function SingletonFactory(Base, REGEX) {
       */
       init: function (data, forClone) {
         /*jshint unused:false */
-        var self = this._super.apply(this, arguments);
+        var self = this._super.apply(this, arguments),
+            equalsTargets = {};
+
         self.$$merged = self.$$data = data || {};
         self.$$setData = {};
         self.$loaded = data ? true : false;
@@ -284,7 +304,7 @@ function SingletonFactory(Base, REGEX) {
           @prop {object} $errors - Contains details about any error states on the field
           @prop {object} $config - Contains the configuration for this field
           @prop {SingletonFieldValidator} valid - Validates the field's value against the field definition
-          @returns {Singleton} `this` 
+          @returns {Singleton} `this`
           */
           /**
           @typedef SingletonFieldValidator
@@ -305,12 +325,15 @@ function SingletonFactory(Base, REGEX) {
           self[ fieldConfig.methodName ].valid = function ( val, forBatch ) {
             var ret = true,
                 i = 0;
-            if ( val === undefinedValue ) {
+            if ( val === undefinedValue || arguments.length === 0 ) {
               val = self[ fieldConfig.methodName ]();
             }
             if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
               setError.call(self, fieldConfig.methodName, 'validator', !ret);
+            }
+            if ( !fieldConfig.equalsTargets && equalsTargets[fieldConfig.methodName] ) {
+              fieldConfig.equalsTargets = equalsTargets[fieldConfig.methodName];
             }
             ret = validate.call(self, val, fieldConfig) && ret;
             if (this.$valid !== ret && ret === true && !forBatch) {
@@ -329,7 +352,16 @@ function SingletonFactory(Base, REGEX) {
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
-        }); 
+          if ( m_isArray(fieldConfig.equals) ) {
+            m_forEach(fieldConfig.equals, function ( target ) {
+              equalsTargets[target] = equalsTargets[target] || [];
+              equalsTargets[target].push(fieldConfig.methodName);
+            });
+          } else if ( m_isString(fieldConfig.equals) ) {
+            equalsTargets[fieldConfig.equals] = equalsTargets[fieldConfig.equals] || [];
+            equalsTargets[fieldConfig.equals].push(fieldConfig.methodName);
+          }
+        });
       },
       /**
       Method to retrieve all the current and pending data ($$data extended by $$setData) for the instance.
