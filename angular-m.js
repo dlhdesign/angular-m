@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.2
+ * @version v1.1.3
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1235,6 +1235,48 @@ function SingletonFactory(Base, REGEX) {
           return self.read(self.$$lastReadData);
         }
         return self.read();
+      },
+
+      $injectService: function (serviceName, callback) {
+        if (m_isString(serviceName) && m_isFunction(callback)) {
+          this[serviceName] = function (data, idx) {
+            var self = this,
+                ret;
+
+            if (self.$busy === true) {
+              self.always(function() {
+                self[serviceName](data, idx);
+              });
+              idx = self.unfinalize();
+              return self;
+            } else {
+              idx = idx || self.unfinalize();
+            }
+        
+            self.$busy = true;
+            ret = callback(
+              data,
+              function (data) {
+                delete self.$errors[serviceName];
+                self.finalize(data);
+                self.resolve(idx);
+                self.trigger(serviceName, data);
+              },
+              function (data) {
+                self.$errors[serviceName] = data;
+                self.reject(idx);
+              }
+            );
+            if (ret === false) {
+              self.$errors[serviceName] = true;
+              self.reject(idx);
+            }
+            return self;
+          };
+        } else {
+          throw new Error('$injectService requires a string and function to be provided');
+        }
+        return this;
       },
 
       /**
