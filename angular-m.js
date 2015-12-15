@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.4
+ * @version v1.1.5
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -834,6 +834,36 @@ function SingletonFactory(Base, REGEX) {
         });
         setError.call(self, fieldConfig.methodName, 'equals', !equals );
         ret = ret && equals;
+      }
+
+      // not-equals
+      if ( m_isString(fieldConfig.notEquals) ) {
+        if ( m_isFunction(self[fieldConfig.notEquals]) && !m_equals(self[fieldConfig.notEquals](), val) ) {
+          setError.call(self, fieldConfig.methodName, 'notEquals', false );
+          setError.call(self, fieldConfig.notEquals, 'notEquals', false );
+          self.trigger('validated.' + fieldConfig.notEquals, false);
+        } else {
+          setError.call(self, fieldConfig.methodName, 'notEquals', true );
+          setError.call(self, fieldConfig.notEquals, 'notEquals', true );
+          self.trigger('validated.' + fieldConfig.notEquals, true);
+          ret = false;
+        }
+      } else if ( m_isArray(fieldConfig.notEquals) ) {
+        notEquals = false;
+        m_forEach(fieldConfig.notEquals, function (target) {
+          if ( m_isFunction(self[target]) ) {
+            if ( !m_equals(self[target](), val) ) {
+              setError.call(self, target, 'notEquals', false );
+              self.trigger('validated.' + target, false);
+            } else {
+              notEquals = true;
+              setError.call(self, target, 'notEquals', true );
+              self.trigger('validated.' + target, true);
+            }
+          }
+        });
+        setError.call(self, fieldConfig.methodName, 'notEquals', !notEquals );
+        ret = ret && notEquals;
       }
 
     // END DEFINED-ONLY CHECKS
