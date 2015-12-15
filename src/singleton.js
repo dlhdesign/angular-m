@@ -215,7 +215,7 @@ function SingletonFactory(Base, REGEX) {
         var self = this._super.apply(this, arguments),
             equalsTargets = {};
 
-        self.$$merged = self.$$data = data || {};
+        self.$$merged = self.$$data = data || false;
         self.$$setData = {};
         self.$loaded = data ? true : false;
         self.$dirty = false;
@@ -556,47 +556,47 @@ function SingletonFactory(Base, REGEX) {
         return self.read();
       },
 
-      $injectService: function (serviceName, callback) {
-        if (m_isString(serviceName) && m_isFunction(callback)) {
-          this[serviceName] = function (data, idx) {
-            var self = this,
-                ret;
+      // $injectService: function (serviceName, callback) {
+      //   if (m_isString(serviceName) && m_isFunction(callback)) {
+      //     this[serviceName] = function (data, idx) {
+      //       var self = this,
+      //           ret;
 
-            if (self.$busy === true) {
-              self.always(function() {
-                self[serviceName](data, idx);
-              });
-              idx = self.unfinalize();
-              return self;
-            } else {
-              idx = idx || self.unfinalize();
-            }
+      //       if (self.$busy === true) {
+      //         self.always(function() {
+      //           self[serviceName](data, idx);
+      //         });
+      //         idx = self.unfinalize();
+      //         return self;
+      //       } else {
+      //         idx = idx || self.unfinalize();
+      //       }
         
-            self.$busy = true;
-            ret = callback(
-              data,
-              function (data) {
-                delete self.$errors[serviceName];
-                self.finalize(data);
-                self.resolve(idx);
-                self.trigger(serviceName, data);
-              },
-              function (data) {
-                self.$errors[serviceName] = data;
-                self.reject(idx);
-              }
-            );
-            if (ret === false) {
-              self.$errors[serviceName] = true;
-              self.reject(idx);
-            }
-            return self;
-          };
-        } else {
-          throw new Error('$injectService requires a string and function to be provided');
-        }
-        return this;
-      },
+      //       self.$busy = true;
+      //       ret = callback(
+      //         data,
+      //         function (data) {
+      //           delete self.$errors[serviceName];
+      //           self.finalize(data);
+      //           self.resolve(idx);
+      //           self.trigger(serviceName, data);
+      //         },
+      //         function (data) {
+      //           self.$errors[serviceName] = data;
+      //           self.reject(idx);
+      //         }
+      //       );
+      //       if (ret === false) {
+      //         self.$errors[serviceName] = true;
+      //         self.reject(idx);
+      //       }
+      //       return self;
+      //     };
+      //   } else {
+      //     throw new Error('$injectService requires a string and function to be provided.');
+      //   }
+      //   return this;
+      // },
 
       /**
       Success callback passed into a service.
