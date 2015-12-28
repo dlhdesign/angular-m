@@ -247,6 +247,7 @@ function SingletonFactory(Base, REGEX) {
 
         self.$$merged = self.$$data = data || false;
         self.$$setData = {};
+        self.$$defaults = {};
         self.$loaded = data ? true : false;
         self.$dirty = false;
         self.$pristine = true;
@@ -256,6 +257,7 @@ function SingletonFactory(Base, REGEX) {
         self.$$fieldConfig = false;
 
         return self.each(function (fieldConfig) {
+          var field, f, target;
           if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
             throw new Error('Singleton Init Error: "getter" must be undefined/null or a function');
           }
@@ -391,6 +393,15 @@ function SingletonFactory(Base, REGEX) {
             equalsTargets[fieldConfig.equals] = equalsTargets[fieldConfig.equals] || [];
             equalsTargets[fieldConfig.equals].push(fieldConfig.methodName);
           }
+          if ( fieldConfig.default !== undefined ) {
+            field = fieldConfig.key.split( '.' );
+            target = self.$$defaults;
+            while ( field.length > 1 ) {
+              f = field.shift();
+              target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
+            }
+            target[ field[ 0 ] ] = fieldConfig.default;
+          }
         });
       },
       /**
@@ -403,7 +414,7 @@ function SingletonFactory(Base, REGEX) {
         if (self.$$merged !== false) {
           return self.$$merged;
         }
-        self.$$merged = merge({}, self.$$data, self.$$setData);
+        self.$$merged = merge({}, self.$$defaults, self.$$data, self.$$setData);
         return self.$$merged;
       },
       /**
