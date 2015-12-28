@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.6
+ * @version v1.1.7
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1945,6 +1945,19 @@ function CollectionFactory(Base, Singleton) {
         } else {
           return ret[0];
         }
+      },
+      /**
+      Adds any linked ChildModels into the current data.
+      @returns {Collection} `this`
+      */
+      finalize: function (data) {
+        var self = this;
+        if ( self.$$addData.length > 0 ) {
+          self.set(self.$$data.concat(self.$$addData));
+          self.$loaded = false;
+          self.trigger('finalized', data);
+        }
+        return self;
       },
       filter: function (_filter) {
         var self = this,
