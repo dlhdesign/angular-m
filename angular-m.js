@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.7
+ * @version v1.1.8
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1840,7 +1840,12 @@ function CollectionFactory(Base, Singleton) {
         }
         self.$$modeled = new Array(self.length);
         m_forEach(self.$$data, function (obj, i) {
-          var ret = new self.childModel(obj);
+          var ret;
+          if (obj instanceof self.childModel) {
+            ret = obj;
+          } else {
+            ret = new self.childModel(obj);
+          }
           ret.$parent = self;
           ret.select = function (value, forBulk) {
             this.$selected = value;
@@ -1954,6 +1959,7 @@ function CollectionFactory(Base, Singleton) {
         var self = this;
         if ( self.$$addData.length > 0 ) {
           self.set(self.$$data.concat(self.$$addData));
+          self.$$addData = [];
           self.$loaded = false;
           self.trigger('finalized', data);
         }
