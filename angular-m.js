@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.8
+ * @version v1.1.9
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1845,6 +1845,7 @@ function CollectionFactory(Base, Singleton) {
             ret = obj;
           } else {
             ret = new self.childModel(obj);
+            ret.resolve();
           }
           ret.$parent = self;
           ret.select = function (value, forBulk) {

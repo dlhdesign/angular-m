@@ -147,6 +147,7 @@ function CollectionFactory(Base, Singleton) {
             ret = obj;
           } else {
             ret = new self.childModel(obj);
+            ret.resolve();
           }
           ret.$parent = self;
           ret.select = function (value, forBulk) {
