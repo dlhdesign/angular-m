@@ -388,6 +388,9 @@ function SingletonFactory(Base, REGEX) {
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
+          self[ fieldConfig.methodName ].$dirty = false;
+          self[ fieldConfig.methodName ].$pristine = true;
+
           if ( m_isArray(fieldConfig.equals) ) {
             m_forEach(fieldConfig.equals, function ( target ) {
               equalsTargets[target] = equalsTargets[target] || [];
@@ -409,7 +412,6 @@ function SingletonFactory(Base, REGEX) {
             } else {
               target[ field[ 0 ] ] = fieldConfig.default;
             }
-            fieldConfig.default;
           }
         });
       },
