@@ -286,7 +286,11 @@ function SingletonFactory(Base, REGEX) {
                 ret = ret[ field.shift() ];
               }
               if ( ( ret === null || ret === undefined ) && fieldConfig.default !== undefined ) {
-                ret = fieldConfig.default;
+                if ( m_isFunction(fieldConfig.default) === true ) {
+                  ret = fieldConfig.default.call(self, fieldConfig);
+                } else {
+                  ret = fieldConfig.default;
+                }
               }
               if ( m_isFunction(fieldConfig.mutateGet) === true ) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
@@ -400,7 +404,12 @@ function SingletonFactory(Base, REGEX) {
               f = field.shift();
               target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
             }
-            target[ field[ 0 ] ] = fieldConfig.default;
+            if ( m_isFunction(fieldConfig.default) === true ) {
+              target[ field[ 0 ] ] = fieldConfig.default.call(self, fieldConfig);
+            } else {
+              target[ field[ 0 ] ] = fieldConfig.default;
+            }
+            fieldConfig.default;
           }
         });
       },
