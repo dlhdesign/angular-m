@@ -243,7 +243,8 @@ function SingletonFactory(Base, REGEX) {
       init: function (data, forClone) {
         /*jshint unused:false */
         var self = this._super.apply(this, arguments),
-            equalsTargets = {};
+            equalsTargets = {},
+            defaultFields = [];
 
         self.$$merged = self.$$data = data || false;
         self.$$setData = {};
@@ -408,12 +409,18 @@ function SingletonFactory(Base, REGEX) {
               target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
             }
             if ( m_isFunction(fieldConfig.default) === true ) {
-              target[ field[ 0 ] ] = fieldConfig.default.call(self, fieldConfig);
+              // Need to delay default processing until all other fields are created
+              defaultFields.push( {t: target, f: field[0], c: fieldConfig} );
             } else {
               target[ field[ 0 ] ] = fieldConfig.default;
             }
           }
         });
+        if ( defaultFields.length > 0 ) {
+          m_forEach( defaultFields, function ( d ) {
+            d.t[ d.f ] = d.c.default.call(self, d.c);
+          });
+        }
       },
       /**
       Method to retrieve all the current and pending data ($$data extended by $$setData) for the instance.
