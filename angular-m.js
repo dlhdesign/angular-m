@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.1.10
+ * @version v2.0.0
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -20,7 +20,7 @@ var m_isFunction = angular.isFunction,
     m_isNumber = angular.isNumber,
     m_isObject = angular.isObject,
     m_isArray = angular.isArray,
-    m_isDate = angular.isDate,
+    m_isDate = function(val) { return angular.isDate(val) && !isNaN(val); },
     m_isUndefined = angular.isUndefined,
     m_isBoolean = function(val) { return (val === true || val === false) ? true: false; },
     m_isRegEx = function(val) { return Object.prototype.toString.call(val) === '[object RegExp]' ? true : false; },
@@ -1069,6 +1069,9 @@ function SingletonFactory(Base, REGEX) {
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
+          self[ fieldConfig.methodName ].$dirty = false;
+          self[ fieldConfig.methodName ].$pristine = true;
+
           if ( m_isArray(fieldConfig.equals) ) {
             m_forEach(fieldConfig.equals, function ( target ) {
               equalsTargets[target] = equalsTargets[target] || [];
@@ -1090,7 +1093,6 @@ function SingletonFactory(Base, REGEX) {
             } else {
               target[ field[ 0 ] ] = fieldConfig.default;
             }
-            fieldConfig.default;
           }
         });
       },
