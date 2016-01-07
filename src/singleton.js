@@ -583,6 +583,9 @@ function SingletonFactory(Base, REGEX) {
         if ( objectKeys(self.$$setData).length > 0 ) {
           ret.set(self.$$setData);
         }
+        if ( objectKeys(self.$$defaults).length > 0 ) {
+          ret.$$defaults = m_copy(self.$$defaults);
+        }
         ret.$loaded = self.$loaded;
         ret.$parent = self.$parent;
         return ret;
