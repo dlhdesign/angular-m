@@ -421,6 +421,7 @@ function SingletonFactory(Base, REGEX) {
           m_forEach( defaultFields, function ( d ) {
             d.t[ d.f ] = d.c.default.call(self, d.c);
           });
+          self.$$merged = false;
         }
         return self;
       },
