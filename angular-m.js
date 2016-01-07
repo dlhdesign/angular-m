@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v2.0.3
+ * @version v2.0.4
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1102,6 +1102,7 @@ function SingletonFactory(Base, REGEX) {
           m_forEach( defaultFields, function ( d ) {
             d.t[ d.f ] = d.c.default.call(self, d.c);
           });
+          self.$$merged = false;
         }
         return self;
       },
