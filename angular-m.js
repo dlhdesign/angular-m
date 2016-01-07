@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v2.0.1
+ * @version v2.0.2
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -721,6 +721,7 @@ function SingletonFactory(Base, REGEX) {
     var self = this;
     self.$errors[field] = self.$errors[field] || {};
     self.$errors[field][key] = value;
+    self[field].$errors = self[field].$errors || {};
     self[field].$errors[key] = value;
   }
   function validate(val, fieldConfig) {
@@ -2359,8 +2360,8 @@ function input() {
       model.$parent.bind('validated.' + model.$config.methodName, setValidity);
 
       // Use parser/formatter to check validity on change of value
-      ctrl.$parsers.unshift(validate);
-      ctrl.$formatters.unshift(validate);
+      ctrl.$parsers.push(validate);
+      ctrl.$formatters.push(validate);
     }
   };
 }
