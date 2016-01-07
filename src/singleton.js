@@ -258,7 +258,7 @@ function SingletonFactory(Base, REGEX) {
         self.$invalid = false;
         self.$$fieldConfig = false;
 
-        return self.each(function (fieldConfig) {
+        self.each(function (fieldConfig) {
           var field, f, target;
           if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
             throw new Error('Singleton Init Error: "getter" must be undefined/null or a function');
@@ -422,6 +422,7 @@ function SingletonFactory(Base, REGEX) {
             d.t[ d.f ] = d.c.default.call(self, d.c);
           });
         }
+        return self;
       },
       /**
       Method to retrieve all the current and pending data ($$data extended by $$setData) for the instance.
