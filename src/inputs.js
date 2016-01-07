@@ -27,8 +27,8 @@ function input() {
       model.$parent.bind('validated.' + model.$config.methodName, setValidity);
 
       // Use parser/formatter to check validity on change of value
-      ctrl.$parsers.unshift(validate);
-      ctrl.$formatters.unshift(validate);
+      ctrl.$parsers.push(validate);
+      ctrl.$formatters.push(validate);
     }
   };
 }
