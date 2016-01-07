@@ -40,6 +40,7 @@ function SingletonFactory(Base, REGEX) {
     var self = this;
     self.$errors[field] = self.$errors[field] || {};
     self.$errors[field][key] = value;
+    self[field].$errors = self[field].$errors || {};
     self[field].$errors[key] = value;
   }
   function validate(val, fieldConfig) {
