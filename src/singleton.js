@@ -48,7 +48,7 @@ function SingletonFactory(Base, REGEX) {
     /*jshint laxbreak:true */
     var self = this,
         ret = true,
-        matches, limit, equals;
+        mVal, matches, limit, equals;
 
     // setError(... true) === In error state
     // setError(... false) === In valid state
@@ -101,24 +101,34 @@ function SingletonFactory(Base, REGEX) {
       }
 
       // min/max
-      if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
-        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
+      if ( m_isFunction(fieldConfig.min) === true ) {
+        mVal = fieldConfig.min.call(self);
+      } else {
+        mVal = fieldConfig.min;
+      }
+      if ( m_isNumber(mVal) || ( fieldConfig.type === 'dt' && m_isDate(mVal) ) ) {
+        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= mVal ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= mVal ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(fieldConfig.min) ) {
+        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(mVal) ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
         } else {
           setError.call(self, fieldConfig.methodName, 'min', true );
           ret = false;
         }
       }
-      if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
-        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
+      if ( m_isFunction(fieldConfig.max) === true ) {
+        mVal = fieldConfig.max.call(self);
+      } else {
+        mVal = fieldConfig.max;
+      }
+      if ( m_isNumber(mVal) || ( fieldConfig.type === 'dt' && m_isDate(mVal) ) ) {
+        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= mVal ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= mVal ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(fieldConfig.max) ) {
+        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(mVal) ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
         } else {
           setError.call(self, fieldConfig.methodName, 'max', true );
