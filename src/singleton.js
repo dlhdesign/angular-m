@@ -308,8 +308,10 @@ function SingletonFactory(Base, REGEX) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
               }
             }
-            fieldConfig.$$getterCacheSet = true;
-            fieldConfig.$$getterCache = ret;
+            if ( fieldConfig.cache !== false ) {
+              fieldConfig.$$getterCacheSet = true;
+              fieldConfig.$$getterCache = ret;
+            }
             return ret;
           }
           function setter(val) {
