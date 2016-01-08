@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v2.1.0
+ * @version v2.2.0
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -989,8 +989,10 @@ function SingletonFactory(Base, REGEX) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
               }
             }
-            fieldConfig.$$getterCacheSet = true;
-            fieldConfig.$$getterCache = ret;
+            if ( fieldConfig.cache !== false ) {
+              fieldConfig.$$getterCacheSet = true;
+              fieldConfig.$$getterCache = ret;
+            }
             return ret;
           }
           function setter(val) {
