@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v2.2.0
+ * @version v2.2.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1138,11 +1138,11 @@ function SingletonFactory(Base, REGEX) {
       */
       set: function (val) {
         var self = this;
-        self.$$merged = false;
         self.$dirty = true;
         self.$pristine = false;
         self.$$setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
+        self.$$merged = true;
         self.clearCache();
         return self;
       },

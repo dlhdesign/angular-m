@@ -457,11 +457,11 @@ function SingletonFactory(Base, REGEX) {
       */
       set: function (val) {
         var self = this;
-        self.$$merged = false;
         self.$dirty = true;
         self.$pristine = false;
         self.$$setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
+        self.$$merged = true;
         self.clearCache();
         return self;
       },
