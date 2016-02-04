@@ -103,7 +103,7 @@ function BaseFactory() {
       return false;
     },
     /**
-    Marks the promie thread as "resolved" (successfully complete).
+    Marks the promie thread as "resolved" (successfully complete). Sets `this.$loaded = true`, `this.$success = true`, `this.$failed = false`, and deletes `this.$busy`.
     @arg [idx=this.$$cbQueueIdx] - Promise thread to resolve
     @arg [data] - Data related to the resolution
     @fires Base#resolved
@@ -113,6 +113,10 @@ function BaseFactory() {
     resolve: function (idx, data) {
       var self = this;
       idx = idx || self.$$cbQueueIdx;
+      self.$loaded = true;
+      self.$success = true;
+      self.$failed = false;
+      delete self.$busy;
       if (!self.isFinal(idx)) {
         self.$$finals[idx] = {
           resolved: true,
@@ -124,7 +128,7 @@ function BaseFactory() {
       return self;
     },
     /**
-    Marks the promise thread as "rejected" (unsuccessfully complete).
+    Marks the promise thread as "rejected" (unsuccessfully complete). Sets `this.$loaded = true`, `this.$success = false`, `this.$failed = true`, and deletes `this.$busy`.
     @arg [idx=this.$$cbQueueIdx] - Promise thread to reject
     @arg [data] - Data related to the rejection
     @fires Base#rejected
@@ -134,6 +138,10 @@ function BaseFactory() {
     reject: function (idx, data) {
       var self = this;
       idx = idx || self.$$cbQueueIdx;
+      self.$loaded = true;
+      self.$success = false;
+      self.$failed = true;
+      delete self.$busy;
       if (!self.isFinal(idx)) {
         self.$$finals[idx] = {
           rejected: true,
@@ -161,13 +169,17 @@ function BaseFactory() {
       return self;
     },
     /**
-    "Resets" the Promise state on the instance by incrementing the current promise thread index.
+    "Resets" the Promise state on the instance by incrementing the current promise thread index. Sets `this.$loaded = false` and deletes `this.$success` and `this.$failed`.
     @fires Base#unfinalized
     @returns {number} `idx` New promise thread index
     */
     unfinalize: function () {
-      this.trigger('unfinalized');
-      return ++this.$$cbQueueIdx;
+      var self = this;
+      self.$loaded = false;
+      delete self.$success;
+      delete self.$failed;
+      self.trigger('unfinalized');
+      return ++self.$$cbQueueIdx;
     },
     /**
     Attaches success/fail/progress callbacks to the current promise thread, which will trigger upon the next resolve/reject call respectively or, if the current promise thread is already final, immediately.

@@ -142,7 +142,13 @@ function CollectionFactory(Base, Singleton) {
         }
         self.$$modeled = new Array(self.length);
         m_forEach(self.$$data, function (obj, i) {
-          var ret = new self.childModel(obj);
+          var ret;
+          if (obj instanceof self.childModel) {
+            ret = obj;
+          } else {
+            ret = new self.childModel(obj);
+            ret.resolve();
+          }
           ret.$parent = self;
           ret.select = function (value, forBulk) {
             this.$selected = value;
@@ -247,6 +253,20 @@ function CollectionFactory(Base, Singleton) {
         } else {
           return ret[0];
         }
+      },
+      /**
+      Adds any linked ChildModels into the current data.
+      @returns {Collection} `this`
+      */
+      finalize: function (data) {
+        var self = this;
+        if ( self.$$addData.length > 0 ) {
+          self.set(self.$$data.concat(self.$$addData));
+          self.$$addData = [];
+          self.$loaded = false;
+          self.trigger('finalized', data);
+        }
+        return self;
       },
       filter: function (_filter) {
         var self = this,
@@ -465,8 +485,8 @@ function CollectionFactory(Base, Singleton) {
         self.$loaded = true;
         delete self.$busy;
         return self._super.apply(self, arguments);
-      },
-
+      },    
+      
       /**
       Re-runs the last `read` call or, if never called, calls `read`.
       @returns {Collection} `this`

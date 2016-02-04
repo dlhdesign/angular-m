@@ -1,6 +1,6 @@
 /**
  * Angular-based model library for use in MVC framework design
- * @version v1.0.0
+ * @version v2.2.1
  * @link https://github.com/dlhdesign/angular-m
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -20,7 +20,7 @@ var m_isFunction = angular.isFunction,
     m_isNumber = angular.isNumber,
     m_isObject = angular.isObject,
     m_isArray = angular.isArray,
-    m_isDate = angular.isDate,
+    m_isDate = function(val) { return angular.isDate(val) && !isNaN(val); },
     m_isUndefined = angular.isUndefined,
     m_isBoolean = function(val) { return (val === true || val === false) ? true: false; },
     m_isRegEx = function(val) { return Object.prototype.toString.call(val) === '[object RegExp]' ? true : false; },
@@ -238,6 +238,7 @@ angular.module( 'angular-m.http', [] )
 
 var RegExConstant = {
   email:      /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])+$/i,
+  phone:      /^(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?$/,
   latLong:    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
   zip:        /^\d{5}(?:[-\s]\d{4})?$/,
   timeZone:   /^GMT\s[+-]\d{2}:\d{2}$/,
@@ -352,7 +353,7 @@ function BaseFactory() {
       return false;
     },
     /**
-    Marks the promie thread as "resolved" (successfully complete).
+    Marks the promie thread as "resolved" (successfully complete). Sets `this.$loaded = true`, `this.$success = true`, `this.$failed = false`, and deletes `this.$busy`.
     @arg [idx=this.$$cbQueueIdx] - Promise thread to resolve
     @arg [data] - Data related to the resolution
     @fires Base#resolved
@@ -362,6 +363,10 @@ function BaseFactory() {
     resolve: function (idx, data) {
       var self = this;
       idx = idx || self.$$cbQueueIdx;
+      self.$loaded = true;
+      self.$success = true;
+      self.$failed = false;
+      delete self.$busy;
       if (!self.isFinal(idx)) {
         self.$$finals[idx] = {
           resolved: true,
@@ -373,7 +378,7 @@ function BaseFactory() {
       return self;
     },
     /**
-    Marks the promise thread as "rejected" (unsuccessfully complete).
+    Marks the promise thread as "rejected" (unsuccessfully complete). Sets `this.$loaded = true`, `this.$success = false`, `this.$failed = true`, and deletes `this.$busy`.
     @arg [idx=this.$$cbQueueIdx] - Promise thread to reject
     @arg [data] - Data related to the rejection
     @fires Base#rejected
@@ -383,6 +388,10 @@ function BaseFactory() {
     reject: function (idx, data) {
       var self = this;
       idx = idx || self.$$cbQueueIdx;
+      self.$loaded = true;
+      self.$success = false;
+      self.$failed = true;
+      delete self.$busy;
       if (!self.isFinal(idx)) {
         self.$$finals[idx] = {
           rejected: true,
@@ -410,13 +419,17 @@ function BaseFactory() {
       return self;
     },
     /**
-    "Resets" the Promise state on the instance by incrementing the current promise thread index.
+    "Resets" the Promise state on the instance by incrementing the current promise thread index. Sets `this.$loaded = false` and deletes `this.$success` and `this.$failed`.
     @fires Base#unfinalized
     @returns {number} `idx` New promise thread index
     */
     unfinalize: function () {
-      this.trigger('unfinalized');
-      return ++this.$$cbQueueIdx;
+      var self = this;
+      self.$loaded = false;
+      delete self.$success;
+      delete self.$failed;
+      self.trigger('unfinalized');
+      return ++self.$$cbQueueIdx;
     },
     /**
     Attaches success/fail/progress callbacks to the current promise thread, which will trigger upon the next resolve/reject call respectively or, if the current promise thread is already final, immediately.
@@ -676,7 +689,9 @@ function SingletonFactory(Base, REGEX) {
   @prop {boolean} $loaded       - If instance has been loaded or instantiated with data, equals `true`; else `false`
   @prop {string}  $type         - The type of model the instance is
   */
-  var Singleton = function () {};
+  var Singleton = function () {},
+
+      undefinedValue = function() {};
 
   /**
   Singleton field cofiguration definition.
@@ -693,15 +708,20 @@ function SingletonFactory(Base, REGEX) {
     });
   }
   function label(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1).replace(/_([a-z])/g, function (v, l) {
-      return ' ' + l.toUpperCase();
-    });
+    return str.charAt(0).toUpperCase() + str.slice(1)
+      .replace(/[a-z]([A-Z])/g, function (v, l, os) { // Handle "camelCase" => "Camel Case"
+        return str.charAt(os + 1) + ' ' + l.toUpperCase();
+      })
+      .replace(/_([a-z])/g, function (v, l) { // Handle "underscore_case" => "Underscore Case"
+        return ' ' + l.toUpperCase();
+      });
   }
   function setError(field, key, value) {
     /*jshint validthis:true */
     var self = this;
     self.$errors[field] = self.$errors[field] || {};
     self.$errors[field][key] = value;
+    self[field].$errors = self[field].$errors || {};
     self[field].$errors[key] = value;
   }
   function validate(val, fieldConfig) {
@@ -709,7 +729,7 @@ function SingletonFactory(Base, REGEX) {
     /*jshint laxbreak:true */
     var self = this,
         ret = true,
-        matches, limit, equals;
+        mVal, matches, limit, equals;
 
     // setError(... true) === In error state
     // setError(... false) === In valid state
@@ -724,6 +744,24 @@ function SingletonFactory(Base, REGEX) {
         setError.call(self, fieldConfig.methodName, 'required', false );
       }
     }
+
+    m_forEach(fieldConfig.equalsTargets, function ( target ) {
+      var valid;
+      if ( m_isFunction(self[target]) && m_equals(self[target](), val) ) {
+        setError.call(self, target, 'equals', false );
+        m_forEach(self[target].$errors, function ( value ) {
+          valid = value && valid;
+        })
+        self[target].$valid = !valid;
+        self[target].$invalid = valid;
+        self.trigger('validated.' + target, false);
+      } else {
+        setError.call(self, target, 'equals', true );
+        self[target].$valid = false;
+        self[target].$invalid = true;
+        self.trigger('validated.' + target, true);
+      }
+    });
 
     if ( m_isUndefined(val) === false && m_isNull(val) === false ) {
     // START DEFINED-ONLY CHECKS
@@ -744,24 +782,34 @@ function SingletonFactory(Base, REGEX) {
       }
 
       // min/max
-      if ( m_isNumber(fieldConfig.min) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.min) ) ) {
-        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= fieldConfig.min ) {
+      if ( m_isFunction(fieldConfig.min) === true ) {
+        mVal = fieldConfig.min.call(self);
+      } else {
+        mVal = fieldConfig.min;
+      }
+      if ( m_isNumber(mVal) || ( fieldConfig.type === 'dt' && m_isDate(mVal) ) ) {
+        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length >= mVal ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= fieldConfig.min ) {
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) >= mVal ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(fieldConfig.min) ) {
+        } else if ( fieldConfig.type === 'dt' && new Date( val ) >= new Date(mVal) ) {
           setError.call(self, fieldConfig.methodName, 'min', false );
         } else {
           setError.call(self, fieldConfig.methodName, 'min', true );
           ret = false;
         }
       }
-      if ( m_isNumber(fieldConfig.max) || ( fieldConfig.type === 'dt' && m_isDate(fieldConfig.max) ) ) {
-        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= fieldConfig.max ) {
+      if ( m_isFunction(fieldConfig.max) === true ) {
+        mVal = fieldConfig.max.call(self);
+      } else {
+        mVal = fieldConfig.max;
+      }
+      if ( m_isNumber(mVal) || ( fieldConfig.type === 'dt' && m_isDate(mVal) ) ) {
+        if ( ( fieldConfig.type === 'st' || fieldConfig.type === 'ar' ) && val.length <= mVal ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
-        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= fieldConfig.max ) {
+        } else if ( ( !fieldConfig.type || fieldConfig.type === 'nu' ) && parseFloat( val ) <= mVal ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
-        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(fieldConfig.max) ) {
+        } else if ( fieldConfig.type === 'dt' && new Date( val ) <= new Date(mVal) ) {
           setError.call(self, fieldConfig.methodName, 'max', false );
         } else {
           setError.call(self, fieldConfig.methodName, 'max', true );
@@ -797,6 +845,36 @@ function SingletonFactory(Base, REGEX) {
         });
         setError.call(self, fieldConfig.methodName, 'equals', !equals );
         ret = ret && equals;
+      }
+
+      // not-equals
+      if ( m_isString(fieldConfig.notEquals) ) {
+        if ( m_isFunction(self[fieldConfig.notEquals]) && !m_equals(self[fieldConfig.notEquals](), val) ) {
+          setError.call(self, fieldConfig.methodName, 'notEquals', false );
+          setError.call(self, fieldConfig.notEquals, 'notEquals', false );
+          self.trigger('validated.' + fieldConfig.notEquals, false);
+        } else {
+          setError.call(self, fieldConfig.methodName, 'notEquals', true );
+          setError.call(self, fieldConfig.notEquals, 'notEquals', true );
+          self.trigger('validated.' + fieldConfig.notEquals, true);
+          ret = false;
+        }
+      } else if ( m_isArray(fieldConfig.notEquals) ) {
+        notEquals = false;
+        m_forEach(fieldConfig.notEquals, function (target) {
+          if ( m_isFunction(self[target]) ) {
+            if ( !m_equals(self[target](), val) ) {
+              setError.call(self, target, 'notEquals', false );
+              self.trigger('validated.' + target, false);
+            } else {
+              notEquals = true;
+              setError.call(self, target, 'notEquals', true );
+              self.trigger('validated.' + target, true);
+            }
+          }
+        });
+        setError.call(self, fieldConfig.methodName, 'notEquals', !notEquals );
+        ret = ret && notEquals;
       }
 
     // END DEFINED-ONLY CHECKS
@@ -856,9 +934,13 @@ function SingletonFactory(Base, REGEX) {
       */
       init: function (data, forClone) {
         /*jshint unused:false */
-        var self = this._super.apply(this, arguments);
-        self.$$merged = self.$$data = data || {};
+        var self = this._super.apply(this, arguments),
+            equalsTargets = {},
+            defaultFields = [];
+
+        self.$$merged = self.$$data = data || false;
         self.$$setData = {};
+        self.$$defaults = {};
         self.$loaded = data ? true : false;
         self.$dirty = false;
         self.$pristine = true;
@@ -867,7 +949,8 @@ function SingletonFactory(Base, REGEX) {
         self.$invalid = false;
         self.$$fieldConfig = false;
 
-        return self.each(function (fieldConfig) {
+        self.each(function (fieldConfig) {
+          var field, f, target;
           if ( fieldConfig.getter !== undefined && !m_isFunction(fieldConfig.getter) ) {
             throw new Error('Singleton Init Error: "getter" must be undefined/null or a function');
           }
@@ -896,14 +979,20 @@ function SingletonFactory(Base, REGEX) {
                 ret = ret[ field.shift() ];
               }
               if ( ( ret === null || ret === undefined ) && fieldConfig.default !== undefined ) {
-                ret = fieldConfig.default;
+                if ( m_isFunction(fieldConfig.default) === true ) {
+                  ret = fieldConfig.default.call(self, fieldConfig);
+                } else {
+                  ret = fieldConfig.default;
+                }
               }
               if ( m_isFunction(fieldConfig.mutateGet) === true ) {
                 ret = fieldConfig.mutateGet.call(self, ret, fieldConfig);
               }
             }
-            fieldConfig.$$getterCacheSet = true;
-            fieldConfig.$$getterCache = ret;
+            if ( fieldConfig.cache !== false ) {
+              fieldConfig.$$getterCacheSet = true;
+              fieldConfig.$$getterCache = ret;
+            }
             return ret;
           }
           function setter(val) {
@@ -914,9 +1003,13 @@ function SingletonFactory(Base, REGEX) {
               throw new Error(fieldConfig.methodName + ' is read-only.' );
             }
             self.$$merged = false;
+            self.$loaded = true;
             self.$dirty = true;
             self.$pristine = false;
-            self.$loaded = true;
+
+            this.$dirty = true;
+            this.$pristine = false;
+
             fieldConfig.$$getterCacheSet = false;
             delete fieldConfig.$$getterCache;
             if ( fieldConfig.setter ) {
@@ -932,7 +1025,7 @@ function SingletonFactory(Base, REGEX) {
             if ( m_isFunction(fieldConfig.mutateSet) === true ) {
               val = fieldConfig.mutateSet.call(self, val, fieldConfig);
             }
-            target[field] = val;
+            target[ field[ 0 ] ] = val;
             return self;
           }
           /**
@@ -960,34 +1053,70 @@ function SingletonFactory(Base, REGEX) {
           self[ fieldConfig.methodName ].$errors = {};
           self[ fieldConfig.methodName ].$parent = self;
           self[ fieldConfig.methodName ].$config = fieldConfig;
-          self[ fieldConfig.methodName ].valid = function ( val ) {
+          self[ fieldConfig.methodName ].valid = function ( val, forBatch ) {
             var ret = true,
                 i = 0;
-            if ( arguments.length === 0 ) {
+            if ( val === undefinedValue || arguments.length === 0 ) {
               val = self[ fieldConfig.methodName ]();
             }
             if ( m_isFunction( fieldConfig.validator ) ) {
               ret = fieldConfig.validator.call(self, val, fieldConfig);
-              setError(self, fieldConfig.methodName, 'validator', !ret);
+              setError.call(self, fieldConfig.methodName, 'validator', !ret);
+            }
+            if ( !fieldConfig.equalsTargets && equalsTargets[fieldConfig.methodName] ) {
+              fieldConfig.equalsTargets = equalsTargets[fieldConfig.methodName];
             }
             ret = validate.call(self, val, fieldConfig) && ret;
-            if (ret === false) {
-              self.$valid = ret;
-            } else if (self.$valid === false) {
-              // Set $valid state to null to prevent endless loop if first field is valid
-              self.$valid = null;
+            if (this.$valid !== ret && ret === true && !forBatch) {
               for(; i<self.$$fieldConfig.length; i++) {
-                self.$valid = self[ self.$$fieldConfig[i].methodName ].valid();
-                if (self.$valid === false) {
-                  break;
+                if (self.$$fieldConfig[i].methodName !== fieldConfig.methodName) {
+                  self.$valid = self[ self.$$fieldConfig[i].methodName ].valid(undefinedValue, true);
+                  self.$invalid = !self.$valid;
+                  if (self.$valid === false) {
+                    break;
+                  }
                 }
               }
             }
-            self.$invalid = !self.$valid;
+            this.$valid = ret;
+            this.$invalid = !ret;
             self.trigger('validated.' + fieldConfig.methodName, ret);
             return ret;
           };
+          self[ fieldConfig.methodName ].$dirty = false;
+          self[ fieldConfig.methodName ].$pristine = true;
+
+          if ( m_isArray(fieldConfig.equals) ) {
+            m_forEach(fieldConfig.equals, function ( target ) {
+              equalsTargets[target] = equalsTargets[target] || [];
+              equalsTargets[target].push(fieldConfig.methodName);
+            });
+          } else if ( m_isString(fieldConfig.equals) ) {
+            equalsTargets[fieldConfig.equals] = equalsTargets[fieldConfig.equals] || [];
+            equalsTargets[fieldConfig.equals].push(fieldConfig.methodName);
+          }
+          if ( fieldConfig.default !== undefined ) {
+            field = fieldConfig.key.split( '.' );
+            target = self.$$defaults;
+            while ( field.length > 1 ) {
+              f = field.shift();
+              target = target[ f ] = m_isObject( target[ f ] ) === true ? target[ f ] : {};
+            }
+            if ( m_isFunction(fieldConfig.default) === true ) {
+              // Need to delay default processing until all other fields are created
+              defaultFields.push( {t: target, f: field[0], c: fieldConfig} );
+            } else {
+              target[ field[ 0 ] ] = fieldConfig.default;
+            }
+          }
         });
+        if ( defaultFields.length > 0 ) {
+          m_forEach( defaultFields, function ( d ) {
+            d.t[ d.f ] = d.c.default.call(self, d.c);
+          });
+          self.$$merged = false;
+        }
+        return self;
       },
       /**
       Method to retrieve all the current and pending data ($$data extended by $$setData) for the instance.
@@ -999,7 +1128,7 @@ function SingletonFactory(Base, REGEX) {
         if (self.$$merged !== false) {
           return self.$$merged;
         }
-        self.$$merged = merge({}, self.$$data, self.$$setData);
+        self.$$merged = merge({}, self.$$defaults, self.$$data, self.$$setData);
         return self.$$merged;
       },
       /**
@@ -1009,11 +1138,11 @@ function SingletonFactory(Base, REGEX) {
       */
       set: function (val) {
         var self = this;
-        self.$$merged = false;
         self.$dirty = true;
         self.$pristine = false;
         self.$$setData = m_copy(val);
         self.$loaded = self.$loaded || objectKeys(val).length > 0;
+        self.$$merged = true;
         self.clearCache();
         return self;
       },
@@ -1098,9 +1227,11 @@ function SingletonFactory(Base, REGEX) {
       */
       validate: function () {
         var self = this;
+        self.$valid = true;
         self.each(function (fieldConfig) {
-          self[ fieldConfig.methodName ].valid();
+          self.$valid = self[ fieldConfig.methodName ].valid(undefinedValue, true) && self.$valid;
         });
+        self.$invalid = !self.$valid;
         self.trigger('validated', self.$valid);
         return self.$valid;
       },
@@ -1145,33 +1276,32 @@ function SingletonFactory(Base, REGEX) {
         if ( objectKeys(self.$$setData).length > 0 ) {
           ret.set(self.$$setData);
         }
+        if ( objectKeys(self.$$defaults).length > 0 ) {
+          ret.$$defaults = m_copy(self.$$defaults);
+        }
         ret.$loaded = self.$loaded;
         ret.$parent = self.$parent;
         return ret;
       },
       /**
-      Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
+      Sets `this.$loaded = true`, `this.$success = true`, `this.$failed = false`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
       resolve: function () {
         var self = this;
-        self.$loaded = true;
-        delete self.$busy;
         self.clearCache();
         return self._super.apply(self, arguments);
       },
       /**
-      Sets `this.$loaded = true`, deletes `this.$busy`, and clears any instance cache that may exist.
+      Sets `this.$loaded = true`, `this.$success = false`, `this.$failed = true`, deletes `this.$busy`, and clears any instance cache that may exist.
       @overrides
       */
       reject: function () {
         var self = this;
-        self.$loaded = true;
-        delete self.$busy;
         self.clearCache();
         return self._super.apply(self, arguments);
       },
-
+      
       /**
       Re-runs the last `read` call or, if never called, calls `read`.
       @returns {Singleton} `this`
@@ -1183,6 +1313,48 @@ function SingletonFactory(Base, REGEX) {
         }
         return self.read();
       },
+
+      // $injectService: function (serviceName, callback) {
+      //   if (m_isString(serviceName) && m_isFunction(callback)) {
+      //     this[serviceName] = function (data, idx) {
+      //       var self = this,
+      //           ret;
+
+      //       if (self.$busy === true) {
+      //         self.always(function() {
+      //           self[serviceName](data, idx);
+      //         });
+      //         idx = self.unfinalize();
+      //         return self;
+      //       } else {
+      //         idx = idx || self.unfinalize();
+      //       }
+        
+      //       self.$busy = true;
+      //       ret = callback(
+      //         data,
+      //         function (data) {
+      //           delete self.$errors[serviceName];
+      //           self.finalize(data);
+      //           self.resolve(idx);
+      //           self.trigger(serviceName, data);
+      //         },
+      //         function (data) {
+      //           self.$errors[serviceName] = data;
+      //           self.reject(idx);
+      //         }
+      //       );
+      //       if (ret === false) {
+      //         self.$errors[serviceName] = true;
+      //         self.reject(idx);
+      //       }
+      //       return self;
+      //     };
+      //   } else {
+      //     throw new Error('$injectService requires a string and function to be provided.');
+      //   }
+      //   return this;
+      // },
 
       /**
       Success callback passed into a service.
@@ -1281,9 +1453,7 @@ function SingletonFactory(Base, REGEX) {
           if (arguments.length === 0) {
             if (self.$dirty === true) {
               data = self.pick(function (fieldConfig) {
-                if (fieldConfig.updateable !== false) {
-                  return true;
-                }
+                return fieldConfig.updateable !== false;
               });
             }
           }
@@ -1349,9 +1519,7 @@ function SingletonFactory(Base, REGEX) {
             if (self.$dirty === true) {
               if ( m_isArray(self.$$fieldConfig) === true && self.$$fieldConfig.length > 0 ) {
                 fields = pick(self.$$fieldConfig, function (fieldConfig) {
-                  if (fieldConfig.updateable !== false) {
-                    return true;
-                  }
+                  return fieldConfig.updateable !== false;
                 }, self);
                 data = pick(self.$$setData, fields);
               }
@@ -1470,9 +1638,7 @@ function SingletonFactory(Base, REGEX) {
           if (arguments.length === 0) {
             if (self.$dirty === true) {
               data = self.pick(function (fieldConfig) {
-                if (fieldConfig.createable !== false) {
-                  return true;
-                }
+                return fieldConfig.createable !== false;
               });
             }
           }
@@ -1710,7 +1876,13 @@ function CollectionFactory(Base, Singleton) {
         }
         self.$$modeled = new Array(self.length);
         m_forEach(self.$$data, function (obj, i) {
-          var ret = new self.childModel(obj);
+          var ret;
+          if (obj instanceof self.childModel) {
+            ret = obj;
+          } else {
+            ret = new self.childModel(obj);
+            ret.resolve();
+          }
           ret.$parent = self;
           ret.select = function (value, forBulk) {
             this.$selected = value;
@@ -1815,6 +1987,20 @@ function CollectionFactory(Base, Singleton) {
         } else {
           return ret[0];
         }
+      },
+      /**
+      Adds any linked ChildModels into the current data.
+      @returns {Collection} `this`
+      */
+      finalize: function (data) {
+        var self = this;
+        if ( self.$$addData.length > 0 ) {
+          self.set(self.$$data.concat(self.$$addData));
+          self.$$addData = [];
+          self.$loaded = false;
+          self.trigger('finalized', data);
+        }
+        return self;
       },
       filter: function (_filter) {
         var self = this,
@@ -2033,8 +2219,8 @@ function CollectionFactory(Base, Singleton) {
         self.$loaded = true;
         delete self.$busy;
         return self._super.apply(self, arguments);
-      },
-
+      },    
+      
       /**
       Re-runs the last `read` call or, if never called, calls `read`.
       @returns {Collection} `this`
@@ -2203,8 +2389,8 @@ function input() {
       model.$parent.bind('validated.' + model.$config.methodName, setValidity);
 
       // Use parser/formatter to check validity on change of value
-      ctrl.$parsers.unshift(validate);
-      ctrl.$formatters.unshift(validate);
+      ctrl.$parsers.push(validate);
+      ctrl.$formatters.push(validate);
     }
   };
 }
